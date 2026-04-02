@@ -10,3 +10,7 @@ __pycache__/
 
 # Mac system files
 .DS_Store
+
+# Data
+data/FraudShield_Banking_Dataset.csv
+data/synthetic_fraud_data.csv

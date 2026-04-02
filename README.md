@@ -1,135 +1,141 @@
-# 🛡️ FraudShield — End-to-End Fraud Detection System
+# 🛡️ FraudShield — Web Edition
 
-A cohesive, portfolio-ready data science project combining **exploratory analysis**, **ML model comparison**, and a **live fraud scoring app** — all built on a single real-world banking dataset.
-
----
-
-## What This Project Covers
-
-| Role | What's demonstrated |
-|---|---|
-| **Data Analyst** | EDA dashboard — fraud by transaction type, merchant, city, hour, prior history |
-| **Data Scientist** | ML pipeline — class imbalance handling, 3-model comparison, ROC/PR curves, feature importance |
-| **AI / ML Engineer** | Live scoring API logic — real-time inference, risk tier, plain-English explanation |
-
----
-
-## Project Structure
+HTML/CSS/JS frontend on **GitHub Pages** + FastAPI backend on **Render**.
 
 ```
 fraudshield/
-├── app.py                  # Streamlit dashboard (all 3 tabs)
+├── backend/
+│   ├── main.py            # FastAPI — /api/health, /api/eda, /api/model, /api/predict
+│   └── requirements.txt
+├── docs/
+│   └── index.html         # GitHub Pages frontend (pure HTML/CSS/JS + Chart.js)
 ├── src/
-│   └── pipeline.py         # Feature engineering, preprocessing, training
-├── models/                 # Auto-created on first run (saved artifacts)
-├── requirements.txt
+│   └── pipeline.py        # ML pipeline (unchanged)
+├── models/
+│   └── artifacts.pkl      # auto-generated on first train
+├── data/
+│   └── FraudShield_Banking_Data.csv
+├── render.yaml            # Render deployment config
 └── README.md
 ```
 
 ---
 
-## Quick Start
+## Step 1 — Train the model
 
-### 1. Clone & install
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
+python src/pipeline.py data/FraudShield_Banking_Data.csv
 ```
 
-### 2. Place your dataset
-Put `FraudShield_Banking_Data.csv` in the root `fraudshield/` folder.
+This creates `models/artifacts.pkl` (~60 seconds).
 
-### 3. Run the app
+---
+
+## Step 2 — Run locally (full stack)
+
+**Terminal 1 — Backend:**
 ```bash
-streamlit run app.py
+uvicorn backend.main:app --reload
+# API running at http://localhost:8000
+# Swagger docs at http://localhost:8000/docs
 ```
 
-The model trains automatically on first launch (~60 seconds). Artifacts are cached in `models/` so subsequent runs are instant.
-
-### 4. (Optional) Pre-train the model separately
+**Terminal 2 — Frontend:**
+Just open `docs/index.html` in your browser.
+Or serve it with any static server:
 ```bash
-python src/pipeline.py FraudShield_Banking_Data.csv
+python -m http.server 3000 --directory docs
+# Open http://localhost:3000
+```
+
+The `API_URL` in `docs/index.html` defaults to `http://localhost:8000`. No changes needed for local dev.
+
+---
+
+## Step 3 — Deploy backend to Render
+
+1. Push this repo to GitHub
+2. Go to [render.com](https://render.com) → New → Web Service
+3. Connect your GitHub repo
+4. Render auto-detects `render.yaml` — click **Deploy**
+5. Note your service URL: `https://fraudshield-api.onrender.com`
+
+> **Free tier note:** Render free tier spins down after 15 min of inactivity.
+> The first request after sleep takes ~30 seconds. Upgrade to Starter ($7/mo)
+> for always-on. Alternatively, use Railway or Fly.io.
+
+---
+
+## Step 4 — Update the frontend API URL
+
+In `docs/index.html`, find line ~780:
+
+```js
+const API_URL = 'http://localhost:8000';
+```
+
+Change to your Render URL:
+
+```js
+const API_URL = 'https://fraudshield-api.onrender.com';
 ```
 
 ---
 
-## Dataset
+## Step 5 — Deploy frontend to GitHub Pages
 
-**FraudShield Banking Data** — 50,000 financial transactions with 25 features:
-
-- **Transaction info**: amount, type (Online/ATM/POS), time, date, merchant category
-- **Customer profile**: home location, card type, account balance, transaction history
-- **Behavioral signals**: daily/weekly tx count, failed transactions, prior fraud count
-- **Risk flags**: international transaction, new merchant, unusual time, distance from home
-- **Target**: `Fraud_Label` — `Normal` (95.2%) vs `Fraud` (4.8%)
+1. Push your repo to GitHub
+2. Go to repo **Settings → Pages**
+3. Source: **Deploy from branch**
+4. Branch: `main` | Folder: `/docs`
+5. Save → your site is live at `https://yourusername.github.io/fraudshield`
 
 ---
 
-## ML Pipeline
+## API Reference
 
-### Feature Engineering
-Beyond raw features, the pipeline engineers:
-- `Amount_vs_Avg` — how far this transaction deviates from the customer's average
-- `Amount_vs_Max24h` — spike ratio vs last 24h maximum
-- `Balance_vs_Amount` — account capacity context
-- `Location_Mismatch` — binary flag: transaction city ≠ home city
-- `Risk_Flag_Count` — composite count of active risk signals
-- Hour, day-of-week, weekend flag from timestamps
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET`  | `/api/health` | Status check, model name, AUC |
+| `GET`  | `/api/eda` | All pre-computed EDA stats |
+| `GET`  | `/api/model` | Model comparison, curves, SHAP, calibration, threshold analysis |
+| `POST` | `/api/predict` | Score a transaction → probability, tier, flags, SHAP waterfall |
 
-### Handling Class Imbalance
-With only ~4.8% fraud cases, accuracy is misleading. The pipeline uses:
-- **Class weighting** (sklearn `compute_class_weight`) — penalises misclassifying fraud
-- **Evaluation on PR-AUC** — not accuracy — because PR-AUC reflects performance on the minority class
+Interactive docs: `https://your-render-url.onrender.com/docs`
 
-### Models Compared
-| Model | Notes |
-|---|---|
-| Random Forest | Ensemble of decision trees, handles non-linearity well |
-| Gradient Boosting | Sequential boosting, strong on tabular data |
-| Logistic Regression | Interpretable baseline |
-
-Best model selected by ROC-AUC and deployed to the live scorer.
-
----
-
-## App Tabs
-
-### 📊 Exploratory Analysis
-- Fraud rate by: transaction type, merchant category, city, hour of day
-- Amount distribution: fraud vs normal
-- Impact of prior fraud history on risk
-
-### 🤖 Model Performance
-- Side-by-side model comparison table (ROC-AUC, PR-AUC, F1, Precision, Recall)
-- ROC curve overlay
-- Precision-Recall curve overlay
-- Confusion matrix of best model
-- Top 12 feature importances
-- Full classification report
-
-### 🎯 Live Fraud Scorer
-- Input any transaction via form
-- Instant fraud probability (0–100%)
-- Risk tier: LOW / MEDIUM / HIGH
-- Plain-English breakdown of which signals drove the score
+### POST /api/predict — request body
+```json
+{
+  "amount": 5.0,
+  "balance": 20.0,
+  "distance": 50,
+  "tx_time": "14:30",
+  "tx_type": "Online",
+  "merchant_cat": "Electronics",
+  "card_type": "Credit",
+  "tx_location": "Dubai",
+  "home_loc": "Karachi",
+  "daily_tx": 3,
+  "weekly_tx": 10,
+  "avg_amount": 3.0,
+  "max_24h": 4.0,
+  "failed": 0,
+  "prev_fraud": 0,
+  "is_intl": "Yes",
+  "is_new": "Yes",
+  "unusual": "No"
+}
+```
 
 ---
 
-## Key Findings
+## Tech Stack
 
-1. **International + New Merchant** is the highest-risk combination
-2. **Late-night transactions** (22:00–02:00) have elevated fraud rates
-3. **Previous_Fraud_Count** is the strongest single predictor
-4. **Distance from home** correlates strongly with fraud likelihood
-5. **Failed transactions in session** is a behavioural red flag
-
----
-
-## Skills Demonstrated
-
-`Python` · `pandas` · `scikit-learn` · `matplotlib` · `seaborn` · `Streamlit`  
-`Feature Engineering` · `Imbalanced Classification` · `Model Evaluation`  
-`Data Visualisation` · `ML Deployment` · `End-to-End Pipeline`
-
----
-
-*Built as a portfolio project for Data Science / Data Analyst / AI Engineer roles.*
+| Layer | Tech |
+|-------|------|
+| Frontend | HTML · CSS · Vanilla JS · Chart.js 4 |
+| Backend | FastAPI · Uvicorn · Pydantic |
+| ML | scikit-learn · SHAP · pandas · numpy |
+| Hosting (FE) | GitHub Pages (free, static) |
+| Hosting (BE) | Render (free tier / $7 Starter) |
