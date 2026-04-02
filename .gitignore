@@ -14,3 +14,6 @@ __pycache__/
 # Data
 data/FraudShield_Banking_Dataset.csv
 data/synthetic_fraud_data.csv
+
+#model
+models/model.pkl
