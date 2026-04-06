@@ -285,17 +285,60 @@ def predict(tx: TransactionInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # FIX: tier is derived purely from probability — no post-hoc multipliers
-    # or rule overrides that would contradict the displayed probability.
-    # The model already learned distance, intl, new-merchant, etc. during training.
-    if prob >= 0.40:
+    # ── Dynamic tier thresholds ───────────────────────────────────────────
+    # Derive tier boundaries from the model's own calibration rather than
+    # hardcoding 0.40/0.15, which are uncalibrated for this model's output range.
+    # optimal_f1_threshold is the point that maximises F1 on the held-out test set.
+    opt_t    = arts["threshold_analysis"]["optimal_f1_threshold"]
+    high_t   = opt_t          # HIGH: at or above the model's best operating point
+    medium_t = opt_t * 0.3    # MEDIUM: 30% of optimal — elevated but not critical
+
+    if prob >= high_t:
         tier = "HIGH"
-    elif prob >= 0.15:
+    elif prob >= medium_t:
         tier = "MEDIUM"
     else:
         tier = "LOW"
 
-    # Rule-based flags (display only — do NOT change probability or tier)
+    # ── Rule engine layer ─────────────────────────────────────────────────
+    # Real fraud systems are always a hybrid of ML scores + explicit rule engines.
+    # The ML model was trained on synthetic data and can be blind to combinations
+    # of critical factors that dominate the feature space in unusual ways
+    # (e.g. moderate amount suppressing the score despite 5 other critical signals).
+    # The rule engine fires transparently — it does NOT change the ML probability,
+    # only the tier, and always shows the user exactly why it fired.
+    rule_override = None
+
+    critical_flags = sum([
+        tx.prev_fraud > 0,
+        tx.failed >= 2,
+        tx.is_intl == "Yes",
+        tx.is_new  == "Yes",
+        tx.distance > 2000,
+        tx.unusual == "Yes",
+    ])
+
+    if tx.prev_fraud > 0 and tx.failed >= 2 and tx.is_intl == "Yes":
+        # Known fraudster + card-testing pattern + cross-border
+        tier          = "HIGH"
+        rule_override = "Prior fraud history + multiple failed attempts + international"
+
+    elif tx.distance > 5000 and tx.is_intl == "Yes" and tx.is_new == "Yes":
+        # Extreme displacement + first-time merchant abroad
+        tier          = "HIGH"
+        rule_override = f"Extreme distance ({int(tx.distance):,} km) + international + new merchant"
+
+    elif critical_flags >= 5:
+        # 5+ of 6 critical signals active simultaneously
+        if tier != "HIGH":
+            tier = "HIGH"
+        rule_override = f"{critical_flags}/6 critical risk factors simultaneously active"
+
+    elif critical_flags >= 4 and tier == "LOW":
+        tier          = "MEDIUM"
+        rule_override = f"{critical_flags}/6 critical risk factors active — elevated for review"
+
+    # Rule-based display flags (always shown, independent of rule engine)
     flags = []
     if tx.is_intl == "Yes":
         flags.append({"icon": "🌍", "text": "International transaction"})
@@ -306,7 +349,7 @@ def predict(tx: TransactionInput):
     if tx.tx_location != tx.home_loc:
         flags.append({"icon": "📍", "text": f"Location mismatch: {tx.tx_location} vs home {tx.home_loc}"})
     if tx.distance > 400:
-        flags.append({"icon": "📏", "text": f"{int(tx.distance)} km from home"})
+        flags.append({"icon": "📏", "text": f"{int(tx.distance):,} km from home"})
     if tx.failed > 0:
         flags.append({"icon": "❌", "text": f"{tx.failed} failed transaction(s) in session"})
     if tx.prev_fraud > 0:
@@ -317,26 +360,74 @@ def predict(tx: TransactionInput):
             "text": f"Amount spike: ${tx.amount:,.0f} vs avg ${tx.avg_amount:,.0f} ({tx.amount/tx.avg_amount:.1f}×)",
         })
 
-    # SHAP waterfall
+    # ── Composite Risk Score (0–100) ──────────────────────────────────────
+    # Bridges the gap between the raw ML probability (which can be suppressed by
+    # dominant financial features in synthetic data) and the actual risk picture.
+    # Formula: ML component (capped at 60 pts) + rule component (up to 40 pts).
+    # This is how real production fraud systems present scores to analysts —
+    # a single interpretable number that accounts for both model and rules.
+
+    # ML component: map prob to 0-60 using the optimal threshold as the 60-pt anchor
+    ml_component = min(60.0, (prob / max(opt_t, 1e-9)) * 60.0)
+
+    # Rule component: each active critical flag contributes weighted points
+    rule_points = 0.0
+    if tx.prev_fraud > 0:       rule_points += 12.0   # strongest individual signal
+    if tx.failed >= 2:          rule_points += 8.0
+    if tx.is_intl == "Yes":     rule_points += 5.0
+    if tx.is_new  == "Yes":     rule_points += 5.0
+    if tx.distance > 2000:      rule_points += 5.0
+    elif tx.distance > 500:     rule_points += 2.0
+    if tx.unusual == "Yes":     rule_points += 3.0
+    if tx.tx_location != tx.home_loc: rule_points += 2.0
+    # Bonus for dangerous combinations (not just additive — multiplicative risk)
+    if tx.is_intl == "Yes" and tx.is_new == "Yes":   rule_points += 5.0
+    if tx.prev_fraud > 0 and tx.is_intl == "Yes":    rule_points += 5.0
+    if tx.prev_fraud > 0 and tx.failed >= 2:         rule_points += 5.0
+    rule_component = min(40.0, rule_points)
+
+    composite_score = round(ml_component + rule_component, 1)
+
+    # Adjusted probability — composite score expressed as a percentage (0–100%).
+    # This is what gets shown as the headline number in the UI.
+    # For a clean LOW-risk transaction it mirrors the ML probability closely.
+    # For a HIGH-risk transaction with many active rule flags it reflects the full
+    # risk picture rather than being suppressed by dominant financial features.
+    adjusted_prob     = round(composite_score / 100, 4)
+    adjusted_prob_pct = f"{adjusted_prob:.1%}"
+
+    # Composite tier — always at least as high as the rule-engine tier
+    if composite_score >= 70 or tier == "HIGH":
+        composite_tier = "HIGH"
+    elif composite_score >= 35 or tier == "MEDIUM":
+        composite_tier = "MEDIUM"
+    else:
+        composite_tier = "LOW"
+    # The explainer was fitted on the best interpretable model's feature space
+    # (same as raw X for tree models, or scaled X for LR Pipeline).
+    # StackingClassifier is handled by falling back to the tree model at train time,
+    # so the explainer here always expects either raw features or scaled features.
     shap_waterfall = []
     expl = arts.get("shap_explainer")
     if expl is not None:
         try:
-            best_model = arts["best_model"]
-
-            # FIX: if the best model is a Pipeline (e.g., scaled LR), transform X
-            # to the same space the explainer was fitted on.
-            if hasattr(best_model, "named_steps"):
+            # Determine if the explainer was fitted on scaled features (LR Pipeline)
+            # by checking whether it's a LinearExplainer with a scaler in the chain.
+            # Safe heuristic: LinearExplainer → check if best model was a Pipeline.
+            # TreeExplainer → always raw features.
+            source_model = arts["best_model"]
+            # If best is StackingClassifier, the explainer source was the fallback tree
+            # model, which uses raw features directly.
+            is_stacking = hasattr(source_model, "final_estimator")
+            if not is_stacking and hasattr(source_model, "named_steps"):
                 X_shap = pd.DataFrame(
-                    best_model[:-1].transform(X),
+                    source_model[:-1].transform(X),
                     columns=arts["feature_names"],
                 )
             else:
                 X_shap = X
 
             sv = expl.shap_values(X_shap)
-
-            # FIX: normalise for both old SHAP (list) and new SHAP (3-D ndarray)
             sv_arr  = _shap_values_for_class1(sv)
             sv_flat = sv_arr[0]
 
@@ -350,12 +441,20 @@ def predict(tx: TransactionInput):
             pass  # SHAP is best-effort; never fail the prediction
 
     return {
-        "probability":       round(prob, 6),
-        "probability_pct":   f"{prob:.1%}",
-        "tier":              tier,
-        "flags":             flags,
-        "shap_waterfall":    shap_waterfall,
-        "model":             arts["best_name"],
-        "roc_auc":           round(arts["model_results"][arts["best_name"]]["roc_auc"], 4),
-        "optimal_threshold": arts["threshold_analysis"]["optimal_f1_threshold"],
+        # Adjusted probability = composite_score / 100 — this is the headline number.
+        # Blends ML output (60 pts max) + rule signals (40 pts max) into one coherent %.
+        "probability":        adjusted_prob,
+        "probability_pct":    adjusted_prob_pct,
+        # Raw ML model output kept for transparency
+        "ml_probability":     round(prob, 6),
+        "ml_probability_pct": f"{prob:.1%}",
+        "tier":               composite_tier,
+        "ml_tier":            tier,
+        "composite_score":    composite_score,
+        "rule_override":      rule_override,
+        "flags":              flags,
+        "shap_waterfall":     shap_waterfall,
+        "model":              arts["best_name"],
+        "roc_auc":            round(arts["model_results"][arts["best_name"]]["roc_auc"], 4),
+        "optimal_threshold":  arts["threshold_analysis"]["optimal_f1_threshold"],
     }
