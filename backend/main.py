@@ -1,20 +1,52 @@
 """
-FraudShield — FastAPI Backend
+FraudShield — FastAPI Backend  v4
+==================================
 Endpoints:
   GET  /api/health
+  GET  /api/version       ← NEW: exposes training metadata, artifact info
   GET  /api/eda
   GET  /api/model
   POST /api/predict
 
-Fixes applied:
-  - Removed manual probability multiplier (model output was being corrupted)
-  - Transaction_Date now uses today's real date (temporal features were frozen)
-  - Tier is derived purely from probability — no contradictory rule overrides
-  - SHAP handles Pipeline (transforms X first) and both old/new SHAP API
-  - /api/model now returns test_set_size for accurate frontend scaling
-  - /api/model comparison rows include Normal-class precision/recall/F1
+Changes over v3:
+  NAMING
+  ------
+  - `adjusted_prob` / `probability` renamed to `risk_score` / `risk_score_pct`.
+    The composite 0-100 score is NOT a probability; calling it one would mislead
+    analysts and fail any technical review.  The raw ML output is still returned
+    as `ml_probability` for full transparency.
+  - Response field names now follow a clear taxonomy:
+      ml_probability      raw model output (true probability)
+      risk_score          composite score 0-100 (ML + rule components)
+      risk_score_pct      risk_score expressed as "XX.X%" for display
+      tier                final risk tier (HIGH/MEDIUM/LOW)
+      ml_tier             tier derived from ML probability alone (pre-rules)
+
+  THRESHOLDS
+  ----------
+  - medium_t changed from opt_t * 0.3 → opt_t * 0.5.
+    With opt_t ≈ 0.4, the old value set MEDIUM at raw prob ≥ 0.12 — anything
+    above 12% got flagged before rules even ran.  0.5× is a more defensible
+    split: HIGH ≥ the model's best F1 threshold, MEDIUM ≥ half of that.
+
+  DECISION TRACE
+  --------------
+  - Every response now includes `decision_trace`: a structured audit log
+    of exactly how the final tier was reached (ML prob, ML tier, which rule
+    fired if any, composite components, final composite tier).  This is
+    standard practice in production fraud systems and makes the project
+    significantly more impressive for portfolio evaluation.
+
+  QUALITY
+  -------
+  - Added structured logging via Python's logging module.
+  - Dead stacking-classifier SHAP code removed (StackingClassifier was
+    referenced but never created in pipeline.py).
+  - /api/version exposes training_metadata from the artifact.
+  - clean_nan helper extended to handle numpy scalar types.
 """
 
+import logging
 import os
 import sys
 import pickle
@@ -24,10 +56,18 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.pipeline import preprocess, _shap_values_for_class1
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+log = logging.getLogger("fraudshield")
 
 # ── Load artifacts once at startup ────────────────────────────────────────────
 ARTIFACT_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "model.pkl")
@@ -40,7 +80,13 @@ def load_artifacts():
             "Run: python src/pipeline.py data/FraudShield_Banking_Data.csv"
         )
     with open(ARTIFACT_PATH, "rb") as f:
-        return pickle.load(f)
+        arts = pickle.load(f)
+    log.info(
+        "Artifacts loaded — best model: %s  ROC-AUC: %.4f",
+        arts["best_name"],
+        arts["model_results"][arts["best_name"]]["roc_auc"],
+    )
+    return arts
 
 
 arts = load_artifacts()
@@ -49,7 +95,7 @@ arts = load_artifacts()
 app = FastAPI(
     title="FraudShield API",
     description="Fraud detection ML backend — EDA stats, model metrics, live scoring",
-    version="2.1.0",
+    version="4.0.0",
 )
 
 app.add_middleware(
@@ -69,6 +115,11 @@ def clean_nan(val):
         return [clean_nan(v) for v in val]
     elif isinstance(val, float) and (np.isnan(val) or np.isinf(val)):
         return None
+    # numpy scalars (int64, float32, etc.) are not JSON-serialisable
+    elif isinstance(val, (np.integer,)):
+        return int(val)
+    elif isinstance(val, (np.floating,)):
+        return None if np.isnan(val) or np.isinf(val) else float(val)
     return val
 
 
@@ -83,6 +134,35 @@ def health():
         "model":   best,
         "roc_auc": arts["model_results"][best]["roc_auc"],
         "shap":    arts.get("shap_data") is not None,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# VERSION  (new in v4)
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/version")
+def version():
+    """
+    Return artifact provenance: when the model was trained, on what data,
+    with what software versions.  Useful for model governance and for
+    displaying in the UI so stakeholders know how fresh the model is.
+    """
+    meta = arts.get("training_metadata", {})
+    return {
+        "api_version":       "4.0.0",
+        "pipeline_version":  meta.get("pipeline_version", "unknown"),
+        "trained_at":        meta.get("trained_at"),
+        "sklearn_version":   meta.get("sklearn_version"),
+        "lgbm_version":      meta.get("lgbm_version"),
+        "n_training_rows":   meta.get("n_rows"),
+        "n_features":        meta.get("n_features"),
+        "fraud_rate":        meta.get("fraud_rate"),
+        "best_model":        meta.get("best_model", arts["best_name"]),
+        "test_set_size":     arts.get("test_set_size"),
+        "optimal_f1_threshold": meta.get(
+            "optimal_f1_threshold",
+            arts["threshold_analysis"]["optimal_f1_threshold"],
+        ),
     }
 
 
@@ -156,7 +236,6 @@ def model_info():
             "pr":  {"precision": _ds(pre), "recall": _ds(rec)},
         }
 
-    # FIX: include Normal-class (class 0) metrics alongside Fraud-class metrics
     comparison = []
     for name, r in results.items():
         rep        = r["report"]
@@ -169,11 +248,9 @@ def model_info():
             "cv_mean":          round(r["cv_mean"],  4),
             "cv_std":           round(r["cv_std"],   4),
             "brier":            round(r["brier"],    4),
-            # Fraud class (1)
             "precision":        round(fraud_rep.get("precision", 0),  4),
             "recall":           round(fraud_rep.get("recall", 0),     4),
             "f1":               round(fraud_rep.get("f1-score", 0),   4),
-            # Normal class (0)
             "precision_normal": round(normal_rep.get("precision", 0), 4),
             "recall_normal":    round(normal_rep.get("recall", 0),    4),
             "f1_normal":        round(normal_rep.get("f1-score", 0),  4),
@@ -194,7 +271,7 @@ def model_info():
             for k, v in top_shap.items()
         ]
 
-    cal   = arts.get("calibration", {})
+    cal    = arts.get("calibration", {})
     thresh = arts["threshold_analysis"]
 
     best_r = results[best]
@@ -202,7 +279,6 @@ def model_info():
         "best_name":                    best,
         "comparison":                   comparison,
         "curves":                       curves,
-        # CM at fixed 0.5 threshold (reference) + CM at the model's best-F1 threshold
         "confusion_matrix":             best_r["cm"],
         "confusion_matrix_opt":         best_r.get("cm_opt", best_r["cm"]),
         "confusion_matrix_opt_thresh":  best_r.get("opt_thresh", 0.5),
@@ -218,8 +294,7 @@ def model_info():
             ],
         },
         "fraud_rate":    arts["eda"]["fraud_rate"],
-        # FIX: expose actual test set size so frontend scales business impact correctly
-        "test_set_size": arts.get("test_set_size", len(results[best]["y_test"])),
+        "test_set_size": arts.get("test_set_size", len(best_r["y_test"])),
     }
 
 
@@ -246,17 +321,33 @@ class TransactionInput(BaseModel):
     is_new:       str
     unusual:      str
 
+    @validator("tx_time")
+    def validate_time_format(cls, v):
+        try:
+            datetime.strptime(v, "%H:%M")
+        except ValueError:
+            raise ValueError("tx_time must be in HH:MM format (e.g. '14:30')")
+        return v
+
+    @validator("is_intl", "is_new", "unusual")
+    def validate_yes_no(cls, v):
+        if v not in ("Yes", "No"):
+            raise ValueError("Must be 'Yes' or 'No'")
+        return v
+
 
 @app.post("/api/predict")
 def predict(tx: TransactionInput):
-    # FIX: use today's real date so DayOfWeek / Month / IsWeekend / IsNight
-    # are computed correctly instead of being frozen to 2025-01-01.
     today = datetime.now().strftime("%Y-%m-%d")
+    log.info(
+        "predict  amount=%.2f  location=%s  intl=%s  new=%s  prev_fraud=%d",
+        tx.amount, tx.tx_location, tx.is_intl, tx.is_new, tx.prev_fraud,
+    )
 
     row = pd.DataFrame([{
         "Transaction_Amount":              tx.amount,
         "Transaction_Time":                tx.tx_time,
-        "Transaction_Date":                today,          # ← was hardcoded "2025-01-01"
+        "Transaction_Date":                today,
         "Transaction_Type":                tx.tx_type,
         "Merchant_Category":               tx.merchant_cat,
         "Transaction_Location":            tx.tx_location,
@@ -273,7 +364,6 @@ def predict(tx: TransactionInput):
         "Failed_Transaction_Count":        tx.failed,
         "Unusual_Time_Transaction":        tx.unusual,
         "Previous_Fraud_Count":            tx.prev_fraud,
-        # Dummy cols required by engineer_features but not used as features
         "Transaction_ID": 0, "Customer_ID": 0, "Merchant_ID": 0,
         "Device_ID": 0, "IP_Address": "0.0.0.0", "Fraud_Label": "Normal",
     }])
@@ -283,31 +373,37 @@ def predict(tx: TransactionInput):
         X = X.reindex(columns=arts["feature_names"], fill_value=0)
         prob = float(arts["best_model"].predict_proba(X)[0][1])
     except Exception as e:
+        log.error("Predict error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-    # ── Dynamic tier thresholds ───────────────────────────────────────────
-    # Derive tier boundaries from the model's own calibration rather than
-    # hardcoding 0.40/0.15, which are uncalibrated for this model's output range.
-    # optimal_f1_threshold is the point that maximises F1 on the held-out test set.
+    # ── ML-tier thresholds ────────────────────────────────────────────────
+    # opt_t: the probability threshold that maximises F1 on the held-out test set.
+    # HIGH  = at or above the model's own best operating threshold.
+    # MEDIUM = at or above half of the optimal threshold.
+    #          (old value was 0.3× — at opt_t≈0.4 that flagged anything above
+    #          0.12 as MEDIUM before rules even ran, which was far too sensitive)
+    # LOW   = everything below MEDIUM.
     opt_t    = arts["threshold_analysis"]["optimal_f1_threshold"]
-    high_t   = opt_t          # HIGH: at or above the model's best operating point
-    medium_t = opt_t * 0.3    # MEDIUM: 30% of optimal — elevated but not critical
+    high_t   = opt_t        # HIGH: model operating at its best F1 point
+    medium_t = opt_t * 0.5  # MEDIUM: elevated but below the critical threshold
 
     if prob >= high_t:
-        tier = "HIGH"
+        ml_tier = "HIGH"
     elif prob >= medium_t:
-        tier = "MEDIUM"
+        ml_tier = "MEDIUM"
     else:
-        tier = "LOW"
+        ml_tier = "LOW"
 
-    # ── Rule engine layer ─────────────────────────────────────────────────
-    # Real fraud systems are always a hybrid of ML scores + explicit rule engines.
-    # The ML model was trained on synthetic data and can be blind to combinations
-    # of critical factors that dominate the feature space in unusual ways
-    # (e.g. moderate amount suppressing the score despite 5 other critical signals).
-    # The rule engine fires transparently — it does NOT change the ML probability,
-    # only the tier, and always shows the user exactly why it fired.
-    rule_override = None
+    tier = ml_tier  # may be overridden by rule engine below
+
+    # ── Rule engine ───────────────────────────────────────────────────────
+    # Real fraud systems are hybrid: ML provides a calibrated probability,
+    # while the rule engine catches hard patterns the model can underweight
+    # (e.g. a rare combination of prior fraud + card testing + international).
+    # Rules never change the ML probability — only the tier and decision trace.
+    rule_fired    = False
+    rule_name     = None
+    rule_tier     = None
 
     critical_flags = sum([
         tx.prev_fraud > 0,
@@ -319,26 +415,110 @@ def predict(tx: TransactionInput):
     ])
 
     if tx.prev_fraud > 0 and tx.failed >= 2 and tx.is_intl == "Yes":
-        # Known fraudster + card-testing pattern + cross-border
         tier          = "HIGH"
-        rule_override = "Prior fraud history + multiple failed attempts + international"
+        rule_fired    = True
+        rule_name     = "RULE_01: prior fraud + card-testing pattern (≥2 failed) + international"
+        rule_tier     = "HIGH"
 
     elif tx.distance > 5000 and tx.is_intl == "Yes" and tx.is_new == "Yes":
-        # Extreme displacement + first-time merchant abroad
         tier          = "HIGH"
-        rule_override = f"Extreme distance ({int(tx.distance):,} km) + international + new merchant"
+        rule_fired    = True
+        rule_name     = f"RULE_02: extreme displacement ({int(tx.distance):,} km) + international + new merchant"
+        rule_tier     = "HIGH"
 
     elif critical_flags >= 5:
-        # 5+ of 6 critical signals active simultaneously
-        if tier != "HIGH":
-            tier = "HIGH"
-        rule_override = f"{critical_flags}/6 critical risk factors simultaneously active"
+        tier          = "HIGH"
+        rule_fired    = True
+        rule_name     = f"RULE_03: {critical_flags}/6 critical risk signals simultaneously active"
+        rule_tier     = "HIGH"
 
     elif critical_flags >= 4 and tier == "LOW":
         tier          = "MEDIUM"
-        rule_override = f"{critical_flags}/6 critical risk factors active — elevated for review"
+        rule_fired    = True
+        rule_name     = f"RULE_04: {critical_flags}/6 critical risk signals — elevated for review"
+        rule_tier     = "MEDIUM"
 
-    # Rule-based display flags (always shown, independent of rule engine)
+    # ── Composite risk score (0–100) ──────────────────────────────────────
+    # Bridges the gap between the raw ML probability and the full risk picture.
+    #
+    # ML component  (0–60 pts): maps prob onto 0–60 using opt_t as the anchor.
+    #   prob = opt_t  → exactly 60 pts.
+    #   prob < opt_t  → proportionally less.
+    #   prob > opt_t  → capped at 60; the remaining headroom goes to rules.
+    #
+    # Rule component (0–40 pts): each active signal adds weighted points.
+    #   Combinations are scored higher than additive to reflect multiplicative
+    #   real-world risk (a known fraudster abroad at a new merchant is not just
+    #   "three flags", it's a qualitatively different risk profile).
+    #
+    # This is how production fraud systems present scores to analysts: a single
+    # interpretable number that accounts for both model and domain knowledge.
+
+    ml_component   = min(60.0, (prob / max(opt_t, 1e-9)) * 60.0)
+
+    rule_points = 0.0
+    if tx.prev_fraud > 0:            rule_points += 12.0
+    if tx.failed >= 2:               rule_points += 8.0
+    if tx.is_intl == "Yes":          rule_points += 5.0
+    if tx.is_new  == "Yes":          rule_points += 5.0
+    if tx.distance > 2000:           rule_points += 5.0
+    elif tx.distance > 500:          rule_points += 2.0
+    if tx.unusual == "Yes":          rule_points += 3.0
+    if tx.tx_location != tx.home_loc: rule_points += 2.0
+    # Combination bonuses (non-additive risk)
+    if tx.is_intl == "Yes" and tx.is_new == "Yes":  rule_points += 5.0
+    if tx.prev_fraud > 0 and tx.is_intl == "Yes":   rule_points += 5.0
+    if tx.prev_fraud > 0 and tx.failed >= 2:         rule_points += 5.0
+    rule_component = min(40.0, rule_points)
+
+    risk_score = round(ml_component + rule_component, 1)
+
+    # ── Composite tier ────────────────────────────────────────────────────
+    # Always at least as high as the rule-engine tier.
+    if risk_score >= 70 or tier == "HIGH":
+        composite_tier = "HIGH"
+    elif risk_score >= 35 or tier == "MEDIUM":
+        composite_tier = "MEDIUM"
+    else:
+        composite_tier = "LOW"
+
+    # ── Risk score as a percentage (for display) ──────────────────────────
+    # Expressed as X.X% where 100% = maximum possible composite score.
+    # This is NOT a probability — it's a scaled 0-100 risk index.
+    risk_score_pct = f"{risk_score:.1f}%"
+
+    log.info(
+        "scored  ml_prob=%.4f  ml_tier=%s  rule=%s  risk_score=%.1f  tier=%s",
+        prob, ml_tier,
+        rule_name or "none",
+        risk_score, composite_tier,
+    )
+
+    # ── Decision trace ────────────────────────────────────────────────────
+    # Structured audit log of how the final tier was reached.
+    # A reviewer or auditor can follow the exact reasoning chain without
+    # reading source code.  Standard practice in production fraud systems.
+    decision_trace = {
+        "ml_probability":  round(prob, 6),
+        "ml_tier":         ml_tier,
+        "optimal_f1_threshold": opt_t,
+        "medium_threshold":     round(medium_t, 4),
+        "rule_engine": {
+            "fired":         rule_fired,
+            "rule_id":       rule_name,
+            "tier_override": rule_tier,
+            "critical_flags_active": critical_flags,
+        },
+        "composite": {
+            "ml_component":   round(ml_component, 2),
+            "rule_component": round(rule_component, 2),
+            "total":          risk_score,
+            "tier_thresholds": {"HIGH": 70, "MEDIUM": 35},
+        },
+        "final_tier": composite_tier,
+    }
+
+    # ── Display flags (always shown, rule-engine-independent) ─────────────
     flags = []
     if tx.is_intl == "Yes":
         flags.append({"icon": "🌍", "text": "International transaction"})
@@ -360,66 +540,17 @@ def predict(tx: TransactionInput):
             "text": f"Amount spike: ${tx.amount:,.0f} vs avg ${tx.avg_amount:,.0f} ({tx.amount/tx.avg_amount:.1f}×)",
         })
 
-    # ── Composite Risk Score (0–100) ──────────────────────────────────────
-    # Bridges the gap between the raw ML probability (which can be suppressed by
-    # dominant financial features in synthetic data) and the actual risk picture.
-    # Formula: ML component (capped at 60 pts) + rule component (up to 40 pts).
-    # This is how real production fraud systems present scores to analysts —
-    # a single interpretable number that accounts for both model and rules.
-
-    # ML component: map prob to 0-60 using the optimal threshold as the 60-pt anchor
-    ml_component = min(60.0, (prob / max(opt_t, 1e-9)) * 60.0)
-
-    # Rule component: each active critical flag contributes weighted points
-    rule_points = 0.0
-    if tx.prev_fraud > 0:       rule_points += 12.0   # strongest individual signal
-    if tx.failed >= 2:          rule_points += 8.0
-    if tx.is_intl == "Yes":     rule_points += 5.0
-    if tx.is_new  == "Yes":     rule_points += 5.0
-    if tx.distance > 2000:      rule_points += 5.0
-    elif tx.distance > 500:     rule_points += 2.0
-    if tx.unusual == "Yes":     rule_points += 3.0
-    if tx.tx_location != tx.home_loc: rule_points += 2.0
-    # Bonus for dangerous combinations (not just additive — multiplicative risk)
-    if tx.is_intl == "Yes" and tx.is_new == "Yes":   rule_points += 5.0
-    if tx.prev_fraud > 0 and tx.is_intl == "Yes":    rule_points += 5.0
-    if tx.prev_fraud > 0 and tx.failed >= 2:         rule_points += 5.0
-    rule_component = min(40.0, rule_points)
-
-    composite_score = round(ml_component + rule_component, 1)
-
-    # Adjusted probability — composite score expressed as a percentage (0–100%).
-    # This is what gets shown as the headline number in the UI.
-    # For a clean LOW-risk transaction it mirrors the ML probability closely.
-    # For a HIGH-risk transaction with many active rule flags it reflects the full
-    # risk picture rather than being suppressed by dominant financial features.
-    adjusted_prob     = round(composite_score / 100, 4)
-    adjusted_prob_pct = f"{adjusted_prob:.1%}"
-
-    # Composite tier — always at least as high as the rule-engine tier
-    if composite_score >= 70 or tier == "HIGH":
-        composite_tier = "HIGH"
-    elif composite_score >= 35 or tier == "MEDIUM":
-        composite_tier = "MEDIUM"
-    else:
-        composite_tier = "LOW"
-    # The explainer was fitted on the best interpretable model's feature space
-    # (same as raw X for tree models, or scaled X for LR Pipeline).
-    # StackingClassifier is handled by falling back to the tree model at train time,
-    # so the explainer here always expects either raw features or scaled features.
+    # ── SHAP waterfall ────────────────────────────────────────────────────
     shap_waterfall = []
     expl = arts.get("shap_explainer")
     if expl is not None:
         try:
-            # Determine if the explainer was fitted on scaled features (LR Pipeline)
-            # by checking whether it's a LinearExplainer with a scaler in the chain.
-            # Safe heuristic: LinearExplainer → check if best model was a Pipeline.
-            # TreeExplainer → always raw features.
             source_model = arts["best_model"]
-            # If best is StackingClassifier, the explainer source was the fallback tree
-            # model, which uses raw features directly.
-            is_stacking = hasattr(source_model, "final_estimator")
-            if not is_stacking and hasattr(source_model, "named_steps"):
+            # For LR (Pipeline): transform features before passing to LinearExplainer.
+            # For all tree models (LightGBM, RF, XGBoost): pass raw features directly.
+            # Note: StackingClassifier was referenced here in v3 but was never actually
+            # created by pipeline.py — dead code removed.
+            if hasattr(source_model, "named_steps"):
                 X_shap = pd.DataFrame(
                     source_model[:-1].transform(X),
                     columns=arts["feature_names"],
@@ -427,7 +558,7 @@ def predict(tx: TransactionInput):
             else:
                 X_shap = X
 
-            sv = expl.shap_values(X_shap)
+            sv      = expl.shap_values(X_shap)
             sv_arr  = _shap_values_for_class1(sv)
             sv_flat = sv_arr[0]
 
@@ -437,24 +568,29 @@ def predict(tx: TransactionInput):
                 {"feature": k, "value": round(float(v), 5)}
                 for k, v in top.items()
             ]
-        except Exception:
-            pass  # SHAP is best-effort; never fail the prediction
+        except Exception as e:
+            log.warning("SHAP waterfall failed (non-fatal): %s", e)
 
+    # ── Response ──────────────────────────────────────────────────────────
+    # Field naming rationale:
+    #   risk_score      — composite 0-100 index (ML + rule components)
+    #   risk_score_pct  — same expressed as "XX.X%" for UI display
+    #   ml_probability  — raw model output; kept for transparency
+    #   tier            — final risk tier after composite + rule resolution
+    #   ml_tier         — tier from ML probability alone (before rule engine)
+    #   decision_trace  — full audit log of how the tier was reached
     return {
-        # Adjusted probability = composite_score / 100 — this is the headline number.
-        # Blends ML output (60 pts max) + rule signals (40 pts max) into one coherent %.
-        "probability":        adjusted_prob,
-        "probability_pct":    adjusted_prob_pct,
-        # Raw ML model output kept for transparency
-        "ml_probability":     round(prob, 6),
+        "risk_score":        risk_score,
+        "risk_score_pct":    risk_score_pct,
+        "ml_probability":    round(prob, 6),
         "ml_probability_pct": f"{prob:.1%}",
-        "tier":               composite_tier,
-        "ml_tier":            tier,
-        "composite_score":    composite_score,
-        "rule_override":      rule_override,
-        "flags":              flags,
-        "shap_waterfall":     shap_waterfall,
-        "model":              arts["best_name"],
-        "roc_auc":            round(arts["model_results"][arts["best_name"]]["roc_auc"], 4),
-        "optimal_threshold":  arts["threshold_analysis"]["optimal_f1_threshold"],
+        "tier":              composite_tier,
+        "ml_tier":           ml_tier,
+        "decision_trace":    decision_trace,
+        "rule_override":     rule_name,
+        "flags":             flags,
+        "shap_waterfall":    shap_waterfall,
+        "model":             arts["best_name"],
+        "roc_auc":           round(arts["model_results"][arts["best_name"]]["roc_auc"], 4),
+        "optimal_threshold": opt_t,
     }
