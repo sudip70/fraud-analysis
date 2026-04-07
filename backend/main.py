@@ -32,15 +32,9 @@ from src.pipeline import preprocess, _shap_values_for_class1
 # ── Environment variables ──────────────────────────────────────────────────────
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
-# CORS_ORIGINS: in production set to your GitHub Pages URL, e.g.
-#   "https://yourusername.github.io"
-# Multiple origins: comma-separated, e.g.
-#   "https://yourusername.github.io,https://myapp.com"
 _cors_raw    = os.environ.get("CORS_ORIGINS", "*")
 CORS_ORIGINS = [o.strip() for o in _cors_raw.split(",")]
 
-# ARTIFACT_PATH: absolute or relative to the repo root.
-# Render's working directory is the repo root, so the default works out of the box.
 ARTIFACT_PATH = os.environ.get(
     "ARTIFACT_PATH",
     os.path.join(os.path.dirname(__file__), "..", "models", "model.pkl"),
@@ -109,6 +103,16 @@ def clean_nan(val):
     if isinstance(val, float) and (np.isnan(val) or np.isinf(val)):
         return None
     return val
+
+
+# ── Tier ranking helper ────────────────────────────────────────────────────────
+# FIX #3: used by predict() to take the strictest of rule-engine tier and
+# score-based tier, preventing a rule override from being silently downgraded
+# by a lower composite score.
+_TIER_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
+
+def _max_tier(a: str, b: str) -> str:
+    return a if _TIER_RANK[a] >= _TIER_RANK[b] else b
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -387,11 +391,18 @@ def predict(tx: TransactionInput):
         raise HTTPException(status_code=500, detail=str(e))
 
     # ── ML-tier thresholds ────────────────────────────────────────────────
-    # opt_t: probability threshold that maximises F1 on the held-out test set.
-    # HIGH   >= opt_t         (model's best operating point)
-    # MEDIUM >= opt_t * 0.5   (elevated but below critical)
-    # LOW    <  opt_t * 0.5
-    opt_t    = arts["threshold_analysis"]["optimal_f1_threshold"]
+    opt_t = arts["threshold_analysis"]["optimal_f1_threshold"]
+
+    # FIX #12: Warn if opt_t is abnormally low. A very small threshold anchors
+    # the ml_component calculation at 60 pts for almost all inputs, inflating
+    # composite scores and making nearly every transaction HIGH risk.
+    if opt_t < 0.1:
+        log.warning(
+            "opt_t is very low (%.4f) — composite scores may be inflated. "
+            "Check threshold_analysis in the model artifact.",
+            opt_t,
+        )
+
     high_t   = opt_t
     medium_t = round(opt_t * 0.5, 4)
 
@@ -402,16 +413,11 @@ def predict(tx: TransactionInput):
     else:
         ml_tier = "LOW"
 
-    tier = ml_tier  # may be upgraded by rule engine below
+    rule_tier = ml_tier  # tracks the highest tier the rule engine wants to assign
 
     # ── Rule engine ───────────────────────────────────────────────────────
-    # Hybrid ML + rules is standard in production fraud systems.
-    # Rules catch hard patterns the model can underweight due to data sparsity
-    # in rare but critical combinations. Rules never change ml_probability —
-    # only tier. Every fired rule is recorded in decision_trace.
     rule_fired = False
     rule_name  = None
-    rule_tier  = None
 
     critical_flags = sum([
         tx.prev_fraud > 0,
@@ -423,36 +429,26 @@ def predict(tx: TransactionInput):
     ])
 
     if tx.prev_fraud > 0 and tx.failed >= 2 and tx.is_intl == "Yes":
-        # Known fraudster + card-testing pattern + cross-border
-        tier       = "HIGH"
         rule_fired = True
         rule_name  = "RULE_01: prior fraud + card-testing (≥2 failed) + international"
-        rule_tier  = "HIGH"
+        rule_tier  = _max_tier(rule_tier, "HIGH")
 
     elif tx.distance > 5000 and tx.is_intl == "Yes" and tx.is_new == "Yes":
-        # Extreme geographic displacement + first-time merchant abroad
-        tier       = "HIGH"
         rule_fired = True
         rule_name  = f"RULE_02: extreme displacement ({int(tx.distance):,} km) + international + new merchant"
-        rule_tier  = "HIGH"
+        rule_tier  = _max_tier(rule_tier, "HIGH")
 
     elif critical_flags >= 5:
-        # 5+ of 6 critical signals simultaneously active
-        tier       = "HIGH"
         rule_fired = True
         rule_name  = f"RULE_03: {critical_flags}/6 critical risk signals simultaneously active"
-        rule_tier  = "HIGH"
+        rule_tier  = _max_tier(rule_tier, "HIGH")
 
-    elif critical_flags >= 4 and tier == "LOW":
-        # Many signals but model scored low — elevate for human review
-        tier       = "MEDIUM"
+    elif critical_flags >= 4 and ml_tier == "LOW":
         rule_fired = True
         rule_name  = f"RULE_04: {critical_flags}/6 critical risk signals — elevated for review"
-        rule_tier  = "MEDIUM"
+        rule_tier  = _max_tier(rule_tier, "MEDIUM")
 
     # ── Composite risk score (0–100) ──────────────────────────────────────
-    # ML component  (0–60 pts): maps prob → 0–60 using opt_t as the 60-pt anchor.
-    # Rule component (0–40 pts): weighted active risk signals + combination bonuses.
     ml_component = min(60.0, (prob / max(opt_t, 1e-9)) * 60.0)
 
     rule_points = 0.0
@@ -473,19 +469,24 @@ def predict(tx: TransactionInput):
     risk_score = round(ml_component + rule_component, 1)
 
     # ── Composite tier ────────────────────────────────────────────────────
-    if risk_score >= 70 or tier == "HIGH":
-        composite_tier = "HIGH"
-    elif risk_score >= 35 or tier == "MEDIUM":
-        composite_tier = "MEDIUM"
-    else:
-        composite_tier = "LOW"
+    # FIX #3: Previously the rule engine wrote to a mutable `tier` variable
+    # which was then used as both the rule result and an input to composite_tier
+    # logic, causing a rule HIGH override to be silently downgraded if the
+    # composite score fell below 70.
+    #
+    # Now: score_tier is derived purely from the numeric score; rule_tier tracks
+    # the strictest tier any rule demanded. composite_tier is the maximum of the
+    # two, so a rule can only ever raise the tier, never lower it.
+    score_tier     = "HIGH" if risk_score >= 70 else "MEDIUM" if risk_score >= 35 else "LOW"
+    composite_tier = _max_tier(score_tier, rule_tier)
 
-    # risk_score_pct: composite index as "XX.X%" — NOT a probability.
     risk_score_pct = f"{risk_score:.1f}%"
 
     log.info(
-        "scored  ml_prob=%.4f  ml_tier=%s  rule=%s  risk_score=%.1f  tier=%s",
-        prob, ml_tier, rule_name or "none", risk_score, composite_tier,
+        "scored  ml_prob=%.4f  ml_tier=%s  rule=%s  rule_tier=%s  "
+        "score_tier=%s  composite_tier=%s  risk_score=%.1f",
+        prob, ml_tier, rule_name or "none", rule_tier,
+        score_tier, composite_tier, risk_score,
     )
 
     # ── Decision trace ────────────────────────────────────────────────────
@@ -537,8 +538,6 @@ def predict(tx: TransactionInput):
     if expl is not None:
         try:
             source_model = arts["best_model"]
-            # LR Pipeline: transform through scaler before LinearExplainer.
-            # Tree models (LightGBM, RF, XGBoost): raw features → TreeExplainer.
             if hasattr(source_model, "named_steps"):
                 X_shap = pd.DataFrame(
                     source_model[:-1].transform(X),
@@ -563,11 +562,11 @@ def predict(tx: TransactionInput):
     # ── Response ──────────────────────────────────────────────────────────
     return {
         # Primary display fields
-        "risk_score":         risk_score,        # composite 0-100 index
-        "risk_score_pct":     risk_score_pct,     # "XX.X%" for UI display
-        "tier":               composite_tier,     # HIGH / MEDIUM / LOW
+        "risk_score":         risk_score,
+        "risk_score_pct":     risk_score_pct,
+        "tier":               composite_tier,
 
-        # Raw ML output — kept for full transparency
+        # Raw ML output
         "ml_probability":     round(prob, 6),
         "ml_probability_pct": f"{prob:.1%}",
         "ml_tier":            ml_tier,

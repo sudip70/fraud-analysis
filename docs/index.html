@@ -42,47 +42,57 @@
 </header>
 
 <!-- ── KPI STRIP ──────────────────────────────────────────────────────────── -->
+<!-- FIX: .kpi-strip no longer has border-left/border-right.
+     Those created a "floating box" look — thick borders at the edges of the
+     strip that didn't align with the full-width shell background.
+     Now only item dividers (border-right per item) are used.
+     The first item gets border-left so the strip has a clean left edge. -->
 <div class="kpi-strip-shell">
   <div class="wrapper">
     <div class="kpi-strip">
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--accent)"></div>
-    <div class="kpi-val" id="kpi-total">—</div>
-    <div class="kpi-lbl">Transactions</div>
-  </div>
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--danger)"></div>
-    <div class="kpi-val" id="kpi-fraud">—</div>
-    <div class="kpi-lbl">Fraud Cases</div>
-  </div>
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--warning)"></div>
-    <div class="kpi-val" id="kpi-rate">—</div>
-    <div class="kpi-lbl">Fraud Rate</div>
-    <div class="kpi-sub">Class imbalance</div>
-  </div>
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--info)"></div>
-    <div class="kpi-val" id="kpi-vol">—</div>
-    <div class="kpi-lbl">Total Volume</div>
-  </div>
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--purple)"></div>
-    <div class="kpi-val" id="kpi-model">—</div>
-    <div class="kpi-lbl">Best Model</div>
-    <div class="kpi-sub" id="kpi-auc">—</div>
-  </div>
-  <div class="kpi-item">
-    <div class="kpi-accent-line" style="background:var(--accent)"></div>
-    <div class="kpi-val" id="kpi-cv">—</div>
-    <div class="kpi-lbl">5-Fold CV AUC</div>
-    <div class="kpi-sub">Stratified</div>
-  </div>
-</div>
 
-  </div><!-- /kpi-strip -->
-  </div><!-- /wrapper -->
-</div><!-- /kpi-strip-shell -->
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--accent)"></div>
+        <div class="kpi-val" id="kpi-total">—</div>
+        <div class="kpi-lbl">Transactions</div>
+      </div>
+
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--danger)"></div>
+        <div class="kpi-val" id="kpi-fraud">—</div>
+        <div class="kpi-lbl">Fraud Cases</div>
+      </div>
+
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--warning)"></div>
+        <div class="kpi-val" id="kpi-rate">—</div>
+        <div class="kpi-lbl">Fraud Rate</div>
+        <div class="kpi-sub">Class imbalance</div>
+      </div>
+
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--info)"></div>
+        <div class="kpi-val" id="kpi-vol">—</div>
+        <div class="kpi-lbl">Total Volume</div>
+      </div>
+
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--purple)"></div>
+        <div class="kpi-val" id="kpi-model">—</div>
+        <div class="kpi-lbl">Best Model</div>
+        <div class="kpi-sub" id="kpi-auc">—</div>
+      </div>
+
+      <div class="kpi-item">
+        <div class="kpi-accent-line" style="background:var(--accent)"></div>
+        <div class="kpi-val" id="kpi-cv">—</div>
+        <div class="kpi-lbl">5-Fold CV AUC</div>
+        <div class="kpi-sub">Stratified</div>
+      </div>
+
+    </div><!-- /.kpi-strip -->
+  </div><!-- /.wrapper -->
+</div><!-- /.kpi-strip-shell -->
 
 <!-- ── TABS ───────────────────────────────────────────────────────────────── -->
 <div class="tabs-wrapper">
@@ -287,7 +297,6 @@
             </div>
             <div class="field"><label>Time (HH:MM)</label><input type="text" id="f-time" value="14:30"></div>
 
-            <!-- Transaction Type — includes Wire Transfer from data -->
             <div class="field">
               <label>Transaction Type</label>
               <select id="f-type">
@@ -298,7 +307,6 @@
               </select>
             </div>
 
-            <!-- Merchant Category — full list from data -->
             <div class="field">
               <label>Merchant Category</label>
               <select id="f-merchant">
@@ -319,7 +327,6 @@
               </select>
             </div>
 
-            <!-- Card Type — includes Prepaid from data -->
             <div class="field">
               <label>Card Type</label>
               <select id="f-card">
@@ -329,119 +336,49 @@
               </select>
             </div>
 
-            <!-- Transaction Location — full city list from data -->
             <div class="field">
               <label>Transaction Location</label>
               <select id="f-location">
-                <option>New York</option>
-                <option>Los Angeles</option>
-                <option>Chicago</option>
-                <option>Houston</option>
-                <option>Phoenix</option>
-                <option>Philadelphia</option>
-                <option>San Antonio</option>
-                <option>San Diego</option>
-                <option>Dallas</option>
-                <option>San Francisco</option>
-                <option>Austin</option>
-                <option>Seattle</option>
-                <option>Denver</option>
-                <option>Nashville</option>
-                <option>Louisville</option>
-                <option>Portland</option>
-                <option>Las Vegas</option>
-                <option>Memphis</option>
-                <option>Atlanta</option>
-                <option>Miami</option>
-                <option>Boston</option>
-                <option>Washington DC</option>
-                <option>Detroit</option>
-                <option>Indianapolis</option>
-                <option>Columbus</option>
-                <option>Charlotte</option>
-                <option>Toronto</option>
-                <option>Vancouver</option>
-                <option>Montreal</option>
-                <option>Calgary</option>
-                <option selected>London</option>
-                <option>Paris</option>
-                <option>Berlin</option>
-                <option>Madrid</option>
-                <option>Rome</option>
-                <option>Amsterdam</option>
-                <option>Dublin</option>
-                <option>Zurich</option>
-                <option>Vienna</option>
-                <option>Brussels</option>
-                <option>Copenhagen</option>
-                <option>Stockholm</option>
-                <option>Oslo</option>
-                <option>Helsinki</option>
-                <option>Lisbon</option>
-                <option>Istanbul</option>
-                <option>Tokyo</option>
-                <option>Singapore</option>
-                <option>Mumbai</option>
-                <option>São Paulo</option>
-                <option>Buenos Aires</option>
+                <option>New York</option><option>Los Angeles</option><option>Chicago</option>
+                <option>Houston</option><option>Phoenix</option><option>Philadelphia</option>
+                <option>San Antonio</option><option>San Diego</option><option>Dallas</option>
+                <option>San Francisco</option><option>Austin</option><option>Seattle</option>
+                <option>Denver</option><option>Nashville</option><option>Louisville</option>
+                <option>Portland</option><option>Las Vegas</option><option>Memphis</option>
+                <option>Atlanta</option><option>Miami</option><option>Boston</option>
+                <option>Washington DC</option><option>Detroit</option><option>Indianapolis</option>
+                <option>Columbus</option><option>Charlotte</option><option>Toronto</option>
+                <option>Vancouver</option><option>Montreal</option><option>Calgary</option>
+                <option selected>London</option><option>Paris</option><option>Berlin</option>
+                <option>Madrid</option><option>Rome</option><option>Amsterdam</option>
+                <option>Dublin</option><option>Zurich</option><option>Vienna</option>
+                <option>Brussels</option><option>Copenhagen</option><option>Stockholm</option>
+                <option>Oslo</option><option>Helsinki</option><option>Lisbon</option>
+                <option>Istanbul</option><option>Tokyo</option><option>Singapore</option>
+                <option>Mumbai</option><option>São Paulo</option><option>Buenos Aires</option>
               </select>
             </div>
 
-            <!-- Home Location — full city list from data -->
             <div class="field">
               <label>Home Location</label>
               <select id="f-home">
-                <option selected>New York</option>
-                <option>Los Angeles</option>
-                <option>Chicago</option>
-                <option>Houston</option>
-                <option>Phoenix</option>
-                <option>Philadelphia</option>
-                <option>San Antonio</option>
-                <option>San Diego</option>
-                <option>Dallas</option>
-                <option>San Francisco</option>
-                <option>Austin</option>
-                <option>Seattle</option>
-                <option>Denver</option>
-                <option>Nashville</option>
-                <option>Louisville</option>
-                <option>Portland</option>
-                <option>Las Vegas</option>
-                <option>Memphis</option>
-                <option>Atlanta</option>
-                <option>Miami</option>
-                <option>Boston</option>
-                <option>Washington DC</option>
-                <option>Detroit</option>
-                <option>Indianapolis</option>
-                <option>Columbus</option>
-                <option>Charlotte</option>
-                <option>Toronto</option>
-                <option>Vancouver</option>
-                <option>Montreal</option>
-                <option>Calgary</option>
-                <option>London</option>
-                <option>Paris</option>
-                <option>Berlin</option>
-                <option>Madrid</option>
-                <option>Rome</option>
-                <option>Amsterdam</option>
-                <option>Dublin</option>
-                <option>Zurich</option>
-                <option>Vienna</option>
-                <option>Brussels</option>
-                <option>Copenhagen</option>
-                <option>Stockholm</option>
-                <option>Oslo</option>
-                <option>Helsinki</option>
-                <option>Lisbon</option>
-                <option>Istanbul</option>
-                <option>Tokyo</option>
-                <option>Singapore</option>
-                <option>Mumbai</option>
-                <option>São Paulo</option>
-                <option>Buenos Aires</option>
+                <option selected>New York</option><option>Los Angeles</option><option>Chicago</option>
+                <option>Houston</option><option>Phoenix</option><option>Philadelphia</option>
+                <option>San Antonio</option><option>San Diego</option><option>Dallas</option>
+                <option>San Francisco</option><option>Austin</option><option>Seattle</option>
+                <option>Denver</option><option>Nashville</option><option>Louisville</option>
+                <option>Portland</option><option>Las Vegas</option><option>Memphis</option>
+                <option>Atlanta</option><option>Miami</option><option>Boston</option>
+                <option>Washington DC</option><option>Detroit</option><option>Indianapolis</option>
+                <option>Columbus</option><option>Charlotte</option><option>Toronto</option>
+                <option>Vancouver</option><option>Montreal</option><option>Calgary</option>
+                <option>London</option><option>Paris</option><option>Berlin</option>
+                <option>Madrid</option><option>Rome</option><option>Amsterdam</option>
+                <option>Dublin</option><option>Zurich</option><option>Vienna</option>
+                <option>Brussels</option><option>Copenhagen</option><option>Stockholm</option>
+                <option>Oslo</option><option>Helsinki</option><option>Lisbon</option>
+                <option>Istanbul</option><option>Tokyo</option><option>Singapore</option>
+                <option>Mumbai</option><option>São Paulo</option><option>Buenos Aires</option>
               </select>
             </div>
           </div>
@@ -488,7 +425,7 @@
             <div class="result-empty-text">Fill in the transaction<br>details and click Analyse</div>
           </div>
           <div id="result-content" style="display:none">
-            <div class="prob-label">Fraud Probability</div>
+            <div class="prob-label">Risk Score (0–100)</div>
             <div class="prob-number" id="result-prob">—</div>
             <div><span class="tier-badge" id="result-tier">—</span></div>
             <div class="gauge-track"><div class="gauge-fill" id="gauge-fill" style="width:0%"></div></div>
@@ -514,7 +451,7 @@
             <button class="btn-ghost" onclick="clearHistory()">Clear</button>
           </div>
           <table class="data-table">
-            <thead><tr><th>#</th><th>Type</th><th>Amount</th><th>Location</th><th>Prob</th><th>Tier</th></tr></thead>
+            <thead><tr><th>#</th><th>Type</th><th>Amount</th><th>Location</th><th>Score</th><th>Tier</th></tr></thead>
             <tbody id="history-body"></tbody>
           </table>
         </div>
@@ -531,6 +468,7 @@
       <div class="section-cap">Translating ML metrics into financial outcomes using a configurable cost matrix.</div>
     </div>
 
+    <!-- Cost matrix config (unchanged) -->
     <div class="cost-inputs">
       <div class="card-title">Cost Matrix Configuration</div>
       <div class="cost-grid">
@@ -552,14 +490,49 @@
       <button class="btn-primary" style="max-width:200px;margin-top:14px" onclick="recalcImpact()">Recalculate</button>
     </div>
 
+    <!-- 4 main KPI cards — redesigned with icons, header row, and context sub-labels -->
     <div class="biz-kpi-grid">
-      <div class="biz-kpi green"><div class="biz-kpi-val" id="biz-caught">—</div><div class="biz-kpi-lbl">Fraud Caught / Mo</div></div>
-      <div class="biz-kpi red">  <div class="biz-kpi-val" id="biz-missed">—</div><div class="biz-kpi-lbl">Fraud Missed / Mo</div></div>
-      <div class="biz-kpi amber"><div class="biz-kpi-val" id="biz-fp-cost">—</div><div class="biz-kpi-lbl">FP Investigation Cost</div></div>
-      <div class="biz-kpi blue"> <div class="biz-kpi-val" id="biz-net">—</div><div class="biz-kpi-lbl">Net Monthly Benefit</div></div>
-    </div>
 
-    <div class="grid-2">
+      <div class="biz-kpi green">
+        <div class="biz-kpi-header">
+          <span class="biz-kpi-icon">🛡️</span>
+          <span class="biz-kpi-lbl">Fraud Caught / Mo</span>
+        </div>
+        <div class="biz-kpi-val" id="biz-caught">—</div>
+        <div class="biz-kpi-sub">value recovered at optimal threshold</div>
+      </div>
+
+      <div class="biz-kpi red">
+        <div class="biz-kpi-header">
+          <span class="biz-kpi-icon">⚠️</span>
+          <span class="biz-kpi-lbl">Fraud Missed / Mo</span>
+        </div>
+        <div class="biz-kpi-val" id="biz-missed">—</div>
+        <div class="biz-kpi-sub">escaped detection cost</div>
+      </div>
+
+      <div class="biz-kpi amber">
+        <div class="biz-kpi-header">
+          <span class="biz-kpi-icon">🔍</span>
+          <span class="biz-kpi-lbl">FP Investigation Cost</span>
+        </div>
+        <div class="biz-kpi-val" id="biz-fp-cost">—</div>
+        <div class="biz-kpi-sub">false alarm review overhead</div>
+      </div>
+
+      <div class="biz-kpi blue">
+        <div class="biz-kpi-header">
+          <span class="biz-kpi-icon">📈</span>
+          <span class="biz-kpi-lbl">Net Monthly Benefit</span>
+        </div>
+        <div class="biz-kpi-val" id="biz-net">—</div>
+        <div class="biz-kpi-sub">caught minus FP costs</div>
+      </div>
+
+    </div><!-- /.biz-kpi-grid -->
+
+    <!-- Charts (unchanged) -->
+    <div class="grid-2" style="margin-bottom:22px">
       <div class="card">
         <div class="card-title">Business Cost Curve vs Threshold</div>
         <div style="height:270px"><canvas id="chart-cost"></canvas></div>
@@ -570,13 +543,47 @@
       </div>
     </div>
 
-    <hr class="divider">
+    <!-- Year-End Projections — replaces the bare 3-column KPI grid -->
+    <div class="projection-panel">
+      <div class="projection-panel-head">
+        <span class="projection-panel-title">Year-End Projections</span>
+        <span class="projection-panel-note">Test set scaled to monthly volume × 12</span>
+      </div>
+      <div class="projection-grid">
 
-    <div class="grid-3" style="margin-bottom:0">
-      <div class="biz-kpi blue"  style="border:1px solid var(--border)"><div class="biz-kpi-val" id="biz-annual-save"    style="font-size:20px">—</div><div class="biz-kpi-lbl">Est. Annual Savings</div></div>
-      <div class="biz-kpi amber" style="border:1px solid var(--border)"><div class="biz-kpi-val" id="biz-annual-cost"    style="font-size:20px">—</div><div class="biz-kpi-lbl">Est. Annual Remaining Cost</div></div>
-      <div class="biz-kpi green" style="border:1px solid var(--border)"><div class="biz-kpi-val" id="biz-monthly-caught" style="font-size:20px">—</div><div class="biz-kpi-lbl">Fraud Txns Caught / Month</div></div>
-    </div>
+        <div class="projection-item p-blue">
+          <div class="projection-item-top">
+            <span class="projection-item-icon">💰</span>
+            <span class="projection-item-lbl">Est. Annual Savings</span>
+          </div>
+          <div class="projection-item-val" id="biz-annual-save">—</div>
+          <div class="projection-item-sub">vs. no-model baseline</div>
+        </div>
+
+        <div class="projection-divider"></div>
+
+        <div class="projection-item p-amber">
+          <div class="projection-item-top">
+            <span class="projection-item-icon">📊</span>
+            <span class="projection-item-lbl">Est. Annual Remaining Cost</span>
+          </div>
+          <div class="projection-item-val" id="biz-annual-cost">—</div>
+          <div class="projection-item-sub">FN + FP costs at optimal threshold</div>
+        </div>
+
+        <div class="projection-divider"></div>
+
+        <div class="projection-item p-green">
+          <div class="projection-item-top">
+            <span class="projection-item-icon">✅</span>
+            <span class="projection-item-lbl">Fraud Txns Caught / Month</span>
+          </div>
+          <div class="projection-item-val" id="biz-monthly-caught">—</div>
+          <div class="projection-item-sub">true positives at optimal threshold</div>
+        </div>
+
+      </div><!-- /.projection-grid -->
+    </div><!-- /.projection-panel -->
 
     <p style="font-size:10px;color:var(--text-faint);font-family:var(--font-mono);margin-top:18px;line-height:1.9;border-top:1px solid var(--border);padding-top:14px;letter-spacing:0.02em">
       ASSUMPTIONS — Cost figures are illustrative and denominated in the same units as the dataset.

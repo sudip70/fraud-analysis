@@ -10,7 +10,8 @@ services:
       import os, subprocess, sys
       if not os.path.exists('models/model.pkl'):
           print('Model artifact not found — training now...')
-          result = subprocess.run([sys.executable, 'src/pipeline.py', 'data/FraudShield_Banking_Data.csv'])
+
+          result = subprocess.run([sys.executable, 'src/pipeline.py', 'data/FraudShield_Banking_Data.csv'],cwd=os.path.dirname(os.path.abspath('render.yaml')),check=True,)
           sys.exit(result.returncode)
       else:
           print('Model artifact found — skipping training.')

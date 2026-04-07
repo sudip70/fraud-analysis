@@ -133,10 +133,18 @@ h1 em { font-style: normal; color: var(--accent); }
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
-
+.container {
+  max-width: 1200px;   /* or whatever your site uses */
+  margin: 0 auto;
+  padding: 0 20px;
+}
 /* ── KPI STRIP ────────────────────────────────────────────────────────────── */
-/* Shell provides full-width background + bottom border.                       */
-/* Inner .kpi-strip is constrained to wrapper width via the .wrapper parent.   */
+/* FIX: Removed border-left and border-right from .kpi-strip.
+   The original had explicit outer borders on the strip itself which, combined
+   with the wrapper's 40px padding, created a "floating box" effect — the
+   strip appeared to have thick double-borders at the left and right edges.
+   The shell background + bottom border already provide visual separation.
+   Item dividers (border-right on each .kpi-item) are sufficient internal structure. */
 .kpi-strip-shell {
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
@@ -144,8 +152,7 @@ h1 em { font-style: normal; color: var(--accent); }
 .kpi-strip {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
+  /* No outer left/right borders — shell provides the container */
 }
 .kpi-item {
   padding: 22px 24px;
@@ -153,7 +160,8 @@ h1 em { font-style: normal; color: var(--accent); }
   transition: background 0.15s;
   position: relative;
 }
-.kpi-item:last-child { border-right: none; }
+.kpi-item:first-child { border-left: 1px solid var(--border); }
+.kpi-item:last-child  { border-right: none; }
 .kpi-item:hover { background: var(--surface); }
 
 .kpi-accent-line {
@@ -244,8 +252,14 @@ h1 em { font-style: normal; color: var(--accent); }
 @media (max-width: 960px) {
   .grid-2, .grid-3, .grid-4, .grid-scorer { grid-template-columns: 1fr; }
   .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+  .kpi-item:nth-child(3) { border-right: none; }
+  .kpi-item:nth-child(4) { border-left: 1px solid var(--border); }
 }
-@media (max-width: 580px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 580px) {
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .kpi-item:nth-child(2n) { border-right: none; }
+  .kpi-item:nth-child(2n+1) { border-left: 1px solid var(--border); }
+}
 
 /* ── CARD ─────────────────────────────────────────────────────────────────── */
 .card {
@@ -443,10 +457,17 @@ h1 em { font-style: normal; color: var(--accent); }
 /* ── BUSINESS IMPACT ──────────────────────────────────────────────────────── */
 .cost-inputs { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 22px; margin-bottom: 18px; }
 .cost-grid   { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+/* Main 4-up KPI cards */
 .biz-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
 .biz-kpi {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-md); padding: 18px 16px; position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 18px 18px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 .biz-kpi::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
@@ -456,8 +477,142 @@ h1 em { font-style: normal; color: var(--accent); }
 .biz-kpi.red::after   { background: var(--danger); }
 .biz-kpi.amber::after { background: var(--warning); }
 .biz-kpi.blue::after  { background: var(--info); }
-.biz-kpi-val { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: #fff; }
-.biz-kpi-lbl { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Icon + label row at the top of each card */
+.biz-kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.biz-kpi-icon {
+  font-size: 15px;
+  opacity: 0.75;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.biz-kpi-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+/* Large value */
+.biz-kpi-val {
+  font-family: var(--font-head);
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+/* Contextual sub-label below the value */
+.biz-kpi-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  margin-top: auto;
+}
+
+/* Color the value by card type */
+.biz-kpi.green .biz-kpi-val { color: var(--accent); }
+.biz-kpi.red   .biz-kpi-val { color: var(--danger); }
+.biz-kpi.amber .biz-kpi-val { color: var(--warning); }
+.biz-kpi.blue  .biz-kpi-val { color: var(--info); }
+
+/* ── YEAR-END PROJECTION PANEL ────────────────────────────────────────────── */
+.projection-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-top: 0;
+}
+.projection-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 16px 22px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.projection-panel-title {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.projection-panel-note {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.03em;
+}
+.projection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr 1px 1fr;
+  align-items: stretch;
+}
+.projection-divider {
+  background: var(--border);
+  width: 1px;
+}
+.projection-item {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.projection-item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.projection-item-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+.projection-item-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.projection-item-val {
+  font-family: var(--font-head);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.projection-item-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+.projection-item.p-blue  .projection-item-val { color: var(--info); }
+.projection-item.p-green .projection-item-val { color: var(--accent); }
+.projection-item.p-amber .projection-item-val { color: var(--warning); }
+
+@media (max-width: 960px) {
+  .biz-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .projection-grid { grid-template-columns: 1fr; }
+  .projection-divider { display: none; }
+  .projection-item { border-bottom: 1px solid var(--border); }
+  .projection-item:last-child { border-bottom: none; }
+}
 
 /* ── HISTORY ──────────────────────────────────────────────────────────────── */
 .history-section { margin-top: 24px; }

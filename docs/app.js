@@ -338,7 +338,11 @@ function renderEDACharts(d) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function renderModelCharts(d) {
-  if (charts['chart-roc'] && !charts['chart-roc'].destroyed) return;
+  // FIX #8: Chart.js v4 does not expose a .destroyed property.
+  // Use the chart instance itself as the guard — makeChart() already calls
+  // destroy() before recreating, so this correctly prevents double-init on
+  // tab switches without the broken !charts['chart-roc'].destroyed check.
+  if (charts['chart-roc']) return;
 
   const palette = [MINT, PUR, '#EC4899'];
 
@@ -556,7 +560,9 @@ async function scoreTransaction() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderResult(data, payload);
-    scoreHistory.unshift({ ...payload, prob: data.risk_score_pct, tier: data.tier });
+    // FIX #13: store risk_score as a number, not the formatted string,
+    // so history entries can be sorted or compared numerically later.
+    scoreHistory.unshift({ ...payload, prob: data.risk_score, tier: data.tier });
     renderHistory();
   } catch (e) {
     alert('Could not reach API. Make sure the backend is running.\n\n' + e.message);
@@ -581,7 +587,7 @@ function renderResult(data, input) {
   el('result-tier').textContent = data.tier + ' RISK';
 
   const gaugeColors = { high: RED, medium: AMBER, low: MINT };
-  el('gauge-fill').style.width      = (data.risk_score / 100 * 100) + '%';
+  el('gauge-fill').style.width      = data.risk_score + '%';
   el('gauge-fill').style.background = gaugeColors[tier];
 
   setText('result-meta-line',
@@ -602,7 +608,11 @@ function renderResult(data, input) {
     traceEl.style.display = 'block';
   }
 
-  // SHAP waterfall
+  // FIX #2: SHAP waterfall bar widths were calculated incorrectly.
+  // pctW is 0-100 representing the bar's share of the half-track.
+  // Positive bars: start at centre (50%) and extend right by pctW.
+  // Negative bars: start at (50 - pctW)% and extend right by pctW to meet centre.
+  // Previously pctW was halved a second time, making all bars half their correct size.
   const shapSec = el('shap-section');
   const shapWf  = el('shap-waterfall');
   if (data.shap_waterfall && data.shap_waterfall.length) {
@@ -615,7 +625,7 @@ function renderResult(data, input) {
       return `<div class="shap-row">
         <div class="shap-feat" title="${r.feature}">${r.feature}</div>
         <div class="shap-bar-track">
-          <div class="shap-bar-fill" style="left:${pos ? 50 : 50 - pctW / 2}%;width:${pctW / 2}%;background:${col}"></div>
+          <div class="shap-bar-fill" style="left:${pos ? 50 : 50 - pctW}%;width:${pctW}%;background:${col}"></div>
           <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2)"></div>
         </div>
         <div class="shap-val" style="color:${col}">${r.value > 0 ? '+' : ''}${r.value.toFixed(4)}</div>
@@ -639,13 +649,14 @@ function renderHistory() {
   if (!scoreHistory.length) return;
   el('history-section').style.display = 'block';
   const tierColors = { HIGH: RED, MEDIUM: AMBER, LOW: MINT };
+  // FIX #13: prob is now stored as a number, so format it here for display.
   el('history-body').innerHTML = scoreHistory.map((r, i) => `
     <tr>
       <td style="color:var(--text-faint)">${scoreHistory.length - i}</td>
       <td>${r.tx_type}</td>
       <td class="num">$${r.amount.toLocaleString()}</td>
       <td>${r.tx_location}</td>
-      <td class="num">${r.prob}</td>
+      <td class="num">${r.prob.toFixed(1)}%</td>
       <td><span style="color:${tierColors[r.tier]};font-weight:600">${r.tier}</span></td>
     </tr>`).join('');
 }
@@ -682,12 +693,14 @@ function recalcImpact() {
   const savingsRows  = rows.map(r => ({ t: r.t, s: baselineCost - r.total }));
   const bestSave     = savingsRows.reduce((a, b) => a.s > b.s ? a : b);
 
-  setText('biz-caught',         'M ' + optRow.caught.toFixed(1));
-  setText('biz-missed',         'M ' + optRow.fn_c.toFixed(1));
-  setText('biz-fp-cost',        'M ' + optRow.fp_c.toFixed(4));
-  setText('biz-net',            'M ' + optRow.net.toFixed(1));
-  setText('biz-annual-save',    'M ' + (bestSave.s * 12).toFixed(1));
-  setText('biz-annual-cost',    'M ' + (optRow.total * 12).toFixed(1));
+  // FIX #9: "M " prefix was misleading (implied millions). These are dollar
+  // amounts scaled from the test set to monthly volume, not millions.
+  setText('biz-caught',         '$' + optRow.caught.toFixed(1));
+  setText('biz-missed',         '$' + optRow.fn_c.toFixed(1));
+  setText('biz-fp-cost',        '$' + optRow.fp_c.toFixed(4));
+  setText('biz-net',            '$' + optRow.net.toFixed(1));
+  setText('biz-annual-save',    '$' + (bestSave.s * 12).toFixed(1));
+  setText('biz-annual-cost',    '$' + (optRow.total * 12).toFixed(1));
   setText('biz-monthly-caught', Math.round(optRow.tp / testSize * monthly).toLocaleString());
 
   makeChart('chart-cost', {
