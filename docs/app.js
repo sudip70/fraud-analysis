@@ -1,6 +1,6 @@
 // ── CONFIG ────────────────────────────────────────────────────────────────────
+
 const API_URL = 'https://fraudshield-cv7g.onrender.com';
-// Production: const API_URL = 'https://fraudshield-api.onrender.com';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── CITY COORDINATES (for auto distance calculation) ──────────────────────────
@@ -195,7 +195,7 @@ async function boot() {
   try {
     const health = await apiFetch('/api/health');
     el('status-badge').innerHTML =
-      `<div class="status-dot"></div> API Online · ${health.model.split(' ')[0]} · AUC ${health.roc_auc}`;
+      `<div class="status-dot"></div> API Online · ${health.model.split(' ')[0]} · AUC ${parseFloat(health.roc_auc).toFixed(4)}`;
 
     [EDA_DATA, MODEL_DATA] = await Promise.all([
       apiFetch('/api/eda'),

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FraudShield — Fraud Detection System</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 L28 7 L28 16 C28 23 22 29 16 31 C10 29 4 23 4 16 L4 7 Z' fill='%2300C896'/><path d='M16 7 L23 10 L23 17 C23 21.5 19.5 25 16 26.5 C12.5 25 9 21.5 9 17 L9 10 Z' fill='%230A0C0F'/><path d='M13 16 L15.5 18.5 L20 13' stroke='%2300C896' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -14,6 +15,7 @@
 .trace-k{color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;flex-shrink:0;margin-right:12px}
 .trace-v{color:var(--text);text-align:right}
 </style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="39a871e4-0554-4159-bb8d-2d2ced68bd07"></script>
 </head>
 <body>
 
@@ -22,7 +24,6 @@
   <div class="wrapper">
     <div class="header-grid">
       <div>
-        <div class="header-eyebrow">End-to-End Portfolio Project</div>
         <h1>Fraud<em>Shield</em><br>Detection</h1>
         <p class="header-sub">
           A full-stack fraud detection system — EDA insights, ML model comparison,
@@ -41,7 +42,9 @@
 </header>
 
 <!-- ── KPI STRIP ──────────────────────────────────────────────────────────── -->
-<div class="kpi-strip">
+<div class="kpi-strip-shell">
+  <div class="wrapper">
+    <div class="kpi-strip">
   <div class="kpi-item">
     <div class="kpi-accent-line" style="background:var(--accent)"></div>
     <div class="kpi-val" id="kpi-total">—</div>
@@ -76,6 +79,10 @@
     <div class="kpi-sub">Stratified</div>
   </div>
 </div>
+
+  </div><!-- /kpi-strip -->
+  </div><!-- /wrapper -->
+</div><!-- /kpi-strip-shell -->
 
 <!-- ── TABS ───────────────────────────────────────────────────────────────── -->
 <div class="tabs-wrapper">
