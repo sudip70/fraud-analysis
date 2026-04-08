@@ -194,7 +194,7 @@ the **stricter of the two** — rules can only raise the tier, never lower it.
 | Layer          | Tech                                              |
 |----------------|---------------------------------------------------|
 | Frontend       | HTML · CSS · Vanilla JS · Chart.js 4              |
-| Backend        | FastAPI · Uvicorn · Pydantic v1                   |
+| Backend        | FastAPI · Uvicorn · Pydantic v2                   |
 | ML             | scikit-learn · LightGBM · XGBoost · SHAP · pandas |
 | Hosting (FE)   | GitHub Pages (free, static)                       |
 | Hosting (BE)   | Render (free tier / $7 Starter)                   |

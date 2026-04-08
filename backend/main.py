@@ -1,5 +1,5 @@
 """
-FraudShield — FastAPI Backend  v4.1
+FraudShield — FastAPI Backend  v4.2
 =====================================
 Endpoints:
   GET  /api/health
@@ -13,21 +13,11 @@ Environment variables (set in Render dashboard or render.yaml):
   CORS_ORIGINS    Comma-separated allowed origins  (default: * — lock down in production)
   LOG_LEVEL       Python logging level  (default: INFO)
 
-Changes in v4.1
+Changes in v4.2
 ---------------
-- Pydantic version guard: raises a clear RuntimeError at import time if Pydantic v2
-  is detected, rather than letting @validator decorators silently do nothing.
-- opt_t safeguard: if the artifact's optimal F1 threshold is abnormally low (< 0.05),
-  a minimum of 0.05 is enforced so that the MEDIUM tier remains reachable and
-  composite scores are not inflated.
-- medium_t is now derived from the clamped opt_t, preventing medium_t == high_t == 0.
-- Production CORS warning: a startup log warning is emitted when CORS_ORIGINS is '*',
-  making accidental open-CORS production deploys visible immediately in logs.
-- Rule-points cap comment: documents that rule_points intentionally exceeds 40 before
-  the min() cap; the cap is design behaviour, not a bug.
-- _expected_international dead-code comment: the None branch is unreachable because
-  tx_location and home_loc are validated against VALID_CITIES == CITY_COUNTRY.keys()
-  before this function is called, but the guard is kept for defensive correctness.
+- Migrated request validators from Pydantic v1 `@validator` to Pydantic v2
+  `@field_validator` for compatibility with modern FastAPI releases.
+- Removed the Pydantic v1-only runtime guard; backend now expects Pydantic v2.
 """
 
 import logging
@@ -40,24 +30,7 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
-# ── Pydantic version guard ─────────────────────────────────────────────────────
-# @validator is a Pydantic v1 API.  In Pydantic v2, @validator is deprecated and
-# silently ignored by default, meaning all input validation would stop working.
-# We raise a clear error at import time rather than letting bad data reach the model.
-try:
-    import pydantic
-    _pydantic_major = int(pydantic.VERSION.split(".")[0])
-    if _pydantic_major >= 2:
-        raise RuntimeError(
-            f"Pydantic v2 ({pydantic.VERSION}) detected. This backend requires Pydantic v1 "
-            "(e.g. pydantic>=1.10,<2). Install the correct version with:\n"
-            "  pip install 'pydantic>=1.10,<2'\n"
-            "Or migrate the @validator decorators to @field_validator (Pydantic v2 API)."
-        )
-    from pydantic import BaseModel, validator
-except ImportError:
-    raise RuntimeError("pydantic is not installed. Run: pip install 'pydantic>=1.10,<2'")
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.pipeline import preprocess, _shap_values_for_class1
@@ -426,15 +399,17 @@ class TransactionInput(BaseModel):
     is_new:       str
     unusual:      str
 
-    @validator(
+    @field_validator(
         "tx_type", "merchant_cat", "card_type", "tx_location", "home_loc",
         "is_intl", "is_new", "unusual",
-        pre=True,
+        mode="before",
     )
+    @classmethod
     def strip_string_inputs(cls, v):
         return v.strip() if isinstance(v, str) else v
 
-    @validator("tx_time")
+    @field_validator("tx_time")
+    @classmethod
     def validate_time_format(cls, v):
         try:
             datetime.strptime(v, "%H:%M")
@@ -442,43 +417,49 @@ class TransactionInput(BaseModel):
             raise ValueError("tx_time must be HH:MM format, e.g. '14:30'")
         return v
 
-    @validator("tx_type")
+    @field_validator("tx_type")
+    @classmethod
     def validate_tx_type(cls, v):
         if v not in VALID_TX_TYPES:
             raise ValueError(f"tx_type must be one of: {sorted(VALID_TX_TYPES)}")
         return v
 
-    @validator("merchant_cat")
+    @field_validator("merchant_cat")
+    @classmethod
     def validate_merchant_category(cls, v):
         if v not in VALID_MERCHANT_CATS:
             raise ValueError(f"merchant_cat must be one of: {sorted(VALID_MERCHANT_CATS)}")
         return v
 
-    @validator("card_type")
+    @field_validator("card_type")
+    @classmethod
     def validate_card_type(cls, v):
         if v not in VALID_CARD_TYPES:
             raise ValueError(f"card_type must be one of: {sorted(VALID_CARD_TYPES)}")
         return v
 
-    @validator("tx_location", "home_loc")
+    @field_validator("tx_location", "home_loc")
+    @classmethod
     def validate_location(cls, v):
         if v not in VALID_CITIES:
             raise ValueError("Location must be one of the supported city values")
         return v
 
-    @validator("is_new", "unusual")
+    @field_validator("is_new", "unusual")
+    @classmethod
     def validate_yes_no(cls, v):
         if v not in ("Yes", "No"):
             raise ValueError("Must be 'Yes' or 'No'")
         return v
 
-    @validator("is_intl")
-    def validate_international_consistency(cls, v, values):
+    @field_validator("is_intl")
+    @classmethod
+    def validate_international_consistency(cls, v, info: ValidationInfo):
         if v not in ("Yes", "No"):
             raise ValueError("Must be 'Yes' or 'No'")
         expected = _expected_international(
-            values.get("home_loc"),
-            values.get("tx_location"),
+            info.data.get("home_loc"),
+            info.data.get("tx_location"),
         )
         # expected is None only if a city is missing from CITY_COUNTRY — see
         # _expected_international docstring. In practice this branch is unreachable
@@ -489,19 +470,22 @@ class TransactionInput(BaseModel):
             )
         return v
 
-    @validator("amount", "balance", "avg_amount", "max_24h", "distance")
+    @field_validator("amount", "balance", "avg_amount", "max_24h", "distance")
+    @classmethod
     def validate_non_negative_float(cls, v):
         if v < 0:
             raise ValueError("Must be >= 0")
         return v
 
-    @validator("daily_tx", "weekly_tx")
+    @field_validator("daily_tx", "weekly_tx")
+    @classmethod
     def validate_tx_counts(cls, v):
         if v < 1:
             raise ValueError("Transaction counts must be >= 1")
         return v
 
-    @validator("failed", "prev_fraud")
+    @field_validator("failed", "prev_fraud")
+    @classmethod
     def validate_non_negative_int(cls, v):
         if v < 0:
             raise ValueError("Must be >= 0")

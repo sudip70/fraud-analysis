@@ -24,7 +24,7 @@ services:
 
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11"
       - key: ARTIFACT_PATH
         value: "models/model.pkl"
       # IMPORTANT: Change '*' to your exact GitHub Pages origin before going to
