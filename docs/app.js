@@ -150,31 +150,101 @@ let THRESH_DATA  = null;
 let scoreHistory = [];
 let charts       = {};
 let _cmShowOpt   = false;   // toggles confusion matrix between 0.5 and optimal threshold
+let _edaRendered = false;   // avoid rendering EDA charts while the panel is hidden
 
 // ── CHART DEFAULTS ────────────────────────────────────────────────────────────
-const GRID  = '#1E2A3A';
-const TEXT  = '#C5D4E8';
-const MUTED = '#3D5270';
+const THEME_KEY = 'fraudshield-theme';
+let GRID  = '#1E2A3A';
+let TEXT  = '#C5D4E8';
+let MUTED = '#3D5270';
 const MINT  = '#00C896';
 const RED   = '#E8455A';
 const AMBER = '#E8A020';
 const BLUE  = '#3B82F6';
 const PUR   = '#8B5CF6';
 
-Chart.defaults.color                              = '#7A92AE';
-Chart.defaults.borderColor                        = GRID;
-Chart.defaults.font.family                        = "'IBM Plex Mono', monospace";
-Chart.defaults.font.size                          = 10;
-Chart.defaults.plugins.legend.labels.boxWidth     = 10;
-Chart.defaults.plugins.legend.labels.padding      = 14;
-Chart.defaults.plugins.legend.labels.color        = TEXT;
-Chart.defaults.plugins.tooltip.backgroundColor    = '#141920';
-Chart.defaults.plugins.tooltip.borderColor        = GRID;
-Chart.defaults.plugins.tooltip.borderWidth        = 1;
-Chart.defaults.plugins.tooltip.titleColor         = TEXT;
-Chart.defaults.plugins.tooltip.bodyColor          = '#7A92AE';
-Chart.defaults.plugins.tooltip.padding            = 10;
-Chart.defaults.animation.duration                 = 600;
+function cssVar(name, fallback = '') {
+  const root = document.body || document.documentElement;
+  const value = getComputedStyle(root).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function syncChartTheme() {
+  GRID  = cssVar('--chart-grid', cssVar('--border', '#1E2A3A'));
+  TEXT  = cssVar('--chart-text', cssVar('--text', '#C5D4E8'));
+  MUTED = cssVar('--chart-muted', cssVar('--text-faint', '#3D5270'));
+
+  const tooltipBg   = cssVar('--tooltip-bg', cssVar('--surface', '#141920'));
+  const tooltipBody = cssVar('--tooltip-body', cssVar('--text-dim', '#7A92AE'));
+
+  Chart.defaults.color                              = tooltipBody;
+  Chart.defaults.borderColor                        = GRID;
+  Chart.defaults.font.family                        = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.size                          = 10;
+  Chart.defaults.plugins.legend.labels.boxWidth     = 10;
+  Chart.defaults.plugins.legend.labels.padding      = 14;
+  Chart.defaults.plugins.legend.labels.color        = TEXT;
+  Chart.defaults.plugins.tooltip.backgroundColor    = tooltipBg;
+  Chart.defaults.plugins.tooltip.borderColor        = GRID;
+  Chart.defaults.plugins.tooltip.borderWidth        = 1;
+  Chart.defaults.plugins.tooltip.titleColor         = TEXT;
+  Chart.defaults.plugins.tooltip.bodyColor          = tooltipBody;
+  Chart.defaults.plugins.tooltip.padding            = 10;
+  Chart.defaults.animation.duration                 = 600;
+}
+
+function rerenderThemeSensitiveViews() {
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+  if (activeTab === 'eda' && EDA_DATA) {
+    renderEDACharts(EDA_DATA);
+    _edaRendered = true;
+  }
+  if (activeTab === 'model' && MODEL_DATA) renderModelCharts(MODEL_DATA);
+  if (activeTab === 'impact' && MODEL_DATA) recalcImpact();
+}
+
+function syncThemeToggle(theme) {
+  const btn = el('theme-toggle');
+  const icon = el('theme-toggle-icon');
+  const label = el('theme-toggle-label');
+  if (!btn || !icon || !label) return;
+
+  const isLight = theme === 'light';
+  btn.setAttribute('aria-pressed', String(isLight));
+  btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  icon.textContent = isLight ? '◐' : '☀';
+  label.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+}
+
+function setTheme(theme, { persist = true, rerender = true } = {}) {
+  const nextTheme = theme === 'light' ? 'light' : 'dark';
+  if (document.body) document.body.dataset.theme = nextTheme;
+  syncChartTheme();
+  syncThemeToggle(nextTheme);
+
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, nextTheme); } catch (_) {}
+  }
+  if (rerender) rerenderThemeSensitiveViews();
+}
+
+function initTheme() {
+  let initialTheme = 'dark';
+  try {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme === 'light' || storedTheme === 'dark') initialTheme = storedTheme;
+  } catch (_) {}
+
+  setTheme(initialTheme, { persist: false, rerender: false });
+
+  const themeBtn = el('theme-toggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const current = document.body?.dataset.theme === 'light' ? 'light' : 'dark';
+      setTheme(current === 'light' ? 'dark' : 'light');
+    });
+  }
+}
 
 function makeChart(id, config) {
   if (charts[id]) charts[id].destroy();
@@ -270,6 +340,10 @@ function switchTab(id, btn) {
     tabBtn.setAttribute('aria-selected', String(active));
     tabBtn.tabIndex = active ? 0 : -1;
   });
+  if (id === 'eda'    && EDA_DATA && !_edaRendered) {
+    renderEDACharts(EDA_DATA);
+    _edaRendered = true;
+  }
   if (id === 'model'  && MODEL_DATA) renderModelCharts(MODEL_DATA);
   if (id === 'impact' && MODEL_DATA) recalcImpact();
 }
@@ -357,7 +431,12 @@ async function boot() {
       setText('eda-total-tx', formatNumber(o.total_transactions));
     }
 
-    if (EDA_DATA) renderEDACharts(EDA_DATA);
+    const edaPanel = el('tab-eda');
+    const edaVisible = edaPanel && !edaPanel.hidden;
+    if (EDA_DATA && edaVisible) {
+      renderEDACharts(EDA_DATA);
+      _edaRendered = true;
+    }
   }
 }
 
@@ -958,6 +1037,8 @@ function recalcImpact() {
 // INIT — single entry point
 // ══════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+
   const urlEl = el('api-url-display');
   if (urlEl) urlEl.textContent = API_URL;
 

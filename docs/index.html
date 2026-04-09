@@ -25,11 +25,15 @@
           with real-time business impact analysis.
         </p>
       </div>
-      <div>
+      <div class="header-tools">
         <div class="status-badge" id="status-badge">
           <div class="spinner" style="width:7px;height:7px;border-width:1px"></div>
           Connecting…
         </div>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light mode">
+          <span class="theme-toggle-icon" id="theme-toggle-icon" aria-hidden="true">☀</span>
+          <span id="theme-toggle-label">Light Mode</span>
+        </button>
       </div>
     </div>
   </div>
@@ -92,10 +96,11 @@
 <div class="tabs-wrapper">
   <div class="wrapper">
     <div class="tabs" role="tablist" aria-label="FraudShield dashboard sections">
-      <button class="tab-btn active" id="tab-btn-eda" role="tab" type="button" aria-selected="true" aria-controls="tab-eda" data-tab="eda" tabindex="0"><span class="tab-icon">📊</span>Exploratory Analysis</button>
+      <button class="tab-btn active" id="tab-btn-eda" role="tab" type="button" aria-selected="true" aria-controls="tab-eda" data-tab="eda" tabindex="0"><span class="tab-icon">📊</span>Exploratory</button>
       <button class="tab-btn" id="tab-btn-model" role="tab" type="button" aria-selected="false" aria-controls="tab-model" data-tab="model" tabindex="-1"><span class="tab-icon">🤖</span>Model Performance</button>
       <button class="tab-btn" id="tab-btn-scorer" role="tab" type="button" aria-selected="false" aria-controls="tab-scorer" data-tab="scorer" tabindex="-1"><span class="tab-icon">🎯</span>Live Scorer</button>
       <button class="tab-btn" id="tab-btn-impact" role="tab" type="button" aria-selected="false" aria-controls="tab-impact" data-tab="impact" tabindex="-1"><span class="tab-icon">💼</span>Business Impact</button>
+      <button class="tab-btn" id="tab-btn-about" role="tab" type="button" aria-selected="false" aria-controls="tab-about" data-tab="about" tabindex="-1"><span class="tab-icon">👤</span>About</button>
     </div>
   </div>
 </div>
@@ -107,6 +112,112 @@
     ⚠ &nbsp;API not reachable at <code id="api-url-display"></code>. &nbsp;
     To run locally: <code>uvicorn backend.main:app --reload</code> &nbsp;|&nbsp;
     Update <code>API_URL</code> in <code>app.js</code> for production.
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 5 — ABOUT
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-about" role="tabpanel" aria-labelledby="tab-btn-about" tabindex="0" hidden>
+    <div class="section-head">
+      <div class="section-title">About <em>Me &amp; This System</em></div>
+      <div class="section-cap">Portfolio profile up top, then a full technical walkthrough of the fraud pipeline, design decisions, and core references.</div>
+    </div>
+
+    <div class="grid-2 section-block">
+      <div class="card about-profile-card">
+        <div class="card-title">Profile</div>
+        <div class="about-name">Sudip Shrestha</div>
+        <div class="about-role">ML Engineer · Data Science Portfolio</div>
+        <p class="about-summary">
+          FraudShield is my end-to-end showcase project focused on practical fraud detection:
+          interpretable modeling, threshold-aware decisions, and clear business impact reporting.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Links</div>
+        <div class="about-link-grid">
+          <a class="about-link" href="https://sudip70.github.io" target="_blank" rel="noreferrer"><span class="about-link-icon">🌐</span>Portfolio</a>
+          <a class="about-link" href="https://www.linkedin.com/in/sudipshrestha-58" target="_blank" rel="noreferrer">
+            <svg class="about-link-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.026-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.266 2.37 4.266 5.455v6.286zM5.337 7.433A2.065 2.065 0 1 1 5.337 3.303a2.065 2.065 0 0 1 0 4.13zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.793 0 0 .774 0 1.729V22.27C0 23.227.793 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          </a>
+          <a class="about-link" href="https://github.com/sudip70" target="_blank" rel="noreferrer">
+            <svg class="about-link-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297C5.373.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.387.6.111.82-.261.82-.579 0-.286-.011-1.231-.017-2.231-3.338.726-4.043-1.416-4.043-1.416-.546-1.387-1.333-1.757-1.333-1.757-1.089-.745.083-.729.083-.729 1.204.084 1.838 1.237 1.838 1.237 1.069 1.833 2.804 1.303 3.489.996.108-.775.418-1.304.762-1.604-2.665-.303-5.467-1.333-5.467-5.931 0-1.311.469-2.382 1.237-3.221-.124-.304-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.53 11.53 0 0 1 3.006-.404c1.02.005 2.047.137 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.839 1.236 1.91 1.236 3.221 0 4.609-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.605-.014 2.899-.014 3.293 0 .321.216.696.825.578C20.565 22.092 24 17.597 24 12.297 24 5.67 18.627.297 12 .297z"/></svg>
+            GitHub
+          </a>
+          <a class="about-link" href="mailto:sudipshrestha.ca@gmail.com"><span class="about-link-icon">✉️</span>Email</a>
+        </div>
+        <p class="about-note">Don't hesitate to reach out!👋👋</p>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-head">
+      <div class="section-title">System <em>Architecture</em></div>
+      <div class="section-cap">How raw transaction input moves through feature engineering, model inference, decision logic, and impact analysis.</div>
+    </div>
+
+    <div class="card section-block">
+      <div class="card-title">Pipeline Flow</div>
+      <div class="about-architecture">
+        <div class="about-step">
+          <div class="about-step-title">1) Data + Feature Layer</div>
+          <div class="about-step-copy">Builds behavior, geo, temporal, and account-risk features (distance, unusual time, prior fraud, velocity, international mismatch).</div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-title">2) Model Benchmarking</div>
+          <div class="about-step-copy">Compares LR, RF, XGBoost and other candidates with stratified CV; best model selected using imbalance-aware metrics.</div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-title">3) Decision Layer</div>
+          <div class="about-step-copy">Combines ML probability with rule triggers to output practical actions: APPROVE, REVIEW, or BLOCK with full traceability.</div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-title">4) Explainability</div>
+          <div class="about-step-copy">Uses SHAP (global + local) so each score is auditable and understandable for stakeholders and reviewers.</div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-title">5) Business Impact Layer</div>
+          <div class="about-step-copy">Converts precision/recall trade-offs into operational cost, savings, and threshold-sensitive impact projections.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 section-block">
+      <div class="card">
+        <div class="card-title">Feature Design Rationale</div>
+        <ul class="about-list">
+          <li>Behavioral drift features capture deviations from personal norms (frequency and amount spikes).</li>
+          <li>Geographic inconsistency (home vs transaction location) surfaces high-friction fraud patterns.</li>
+          <li>Merchant novelty and prior fraud history improve early-risk signal strength.</li>
+          <li>Temporal cues (late-night activity, weekend patterns) improve separability in edge cases.</li>
+          <li>Rules intentionally complement the model for high-severity scenarios where recall matters most.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">How To Read This Dashboard</div>
+        <ul class="about-list">
+          <li><strong>Exploratory:</strong> Understand fraud hotspots and pattern concentration.</li>
+          <li><strong>Model Performance:</strong> Compare metrics, calibration, confusion matrix, and threshold tuning.</li>
+          <li><strong>Live Scorer:</strong> Score one transaction with explanation, decision trace, and risk signals.</li>
+          <li><strong>Business Impact:</strong> Translate model behavior into FP/FN costs and projected savings.</li>
+          <li><strong>Goal:</strong> Prioritize explainable, decision-ready fraud triage over raw model accuracy alone.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Reference Papers</div>
+      <ul class="about-paper-list">
+        <li><a href="https://dl.acm.org/doi/10.1145/1143844.1143874" target="_blank" rel="noreferrer">Davis &amp; Goadrich (2006)</a> — Why Precision-Recall curves are preferred for imbalanced classification.</li>
+        <li><a href="https://www.jstor.org/stable/2674023" target="_blank" rel="noreferrer">Breiman (2001)</a> — Random Forest methodology and variance reduction.</li>
+        <li><a href="https://dl.acm.org/doi/10.1145/2939672.2939785" target="_blank" rel="noreferrer">Chen &amp; Guestrin (2016)</a> — XGBoost system design for scalable gradient boosting.</li>
+        <li><a href="https://proceedings.neurips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html" target="_blank" rel="noreferrer">Lundberg &amp; Lee (2017)</a> — SHAP unified framework for model explanations.</li>
+        <li><a href="https://www.cs.cornell.edu/~alexn/papers/calibration.icml05.crc.rev3.pdf" target="_blank" rel="noreferrer">Niculescu-Mizil &amp; Caruana (2005)</a> — Probability calibration insights for supervised models.</li>
+      </ul>
+    </div>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════════════════
