@@ -199,21 +199,38 @@ function rerenderThemeSensitiveViews() {
     renderEDACharts(EDA_DATA);
     _edaRendered = true;
   }
-  if (activeTab === 'model' && MODEL_DATA) renderModelCharts(MODEL_DATA);
+  if (activeTab === 'model' && MODEL_DATA) renderModelCharts(MODEL_DATA, { force: true });
   if (activeTab === 'impact' && MODEL_DATA) recalcImpact();
+}
+
+function themeIconSvg(theme) {
+  if (theme === 'dark') {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <line x1="12" y1="1.8" x2="12" y2="4.4"></line>
+      <line x1="12" y1="19.6" x2="12" y2="22.2"></line>
+      <line x1="1.8" y1="12" x2="4.4" y2="12"></line>
+      <line x1="19.6" y1="12" x2="22.2" y2="12"></line>
+      <line x1="4.8" y1="4.8" x2="6.7" y2="6.7"></line>
+      <line x1="17.3" y1="17.3" x2="19.2" y2="19.2"></line>
+      <line x1="17.3" y1="6.7" x2="19.2" y2="4.8"></line>
+      <line x1="4.8" y1="19.2" x2="6.7" y2="17.3"></line>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 13.2A8.7 8.7 0 1 1 10.8 3 6.9 6.9 0 0 0 21 13.2z"></path>
+  </svg>`;
 }
 
 function syncThemeToggle(theme) {
   const btn = el('theme-toggle');
   const icon = el('theme-toggle-icon');
-  const label = el('theme-toggle-label');
-  if (!btn || !icon || !label) return;
+  if (!btn || !icon) return;
 
   const isLight = theme === 'light';
   btn.setAttribute('aria-pressed', String(isLight));
   btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
-  icon.textContent = isLight ? '◐' : '☀';
-  label.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+  icon.innerHTML = themeIconSvg(theme);
 }
 
 function setTheme(theme, { persist = true, rerender = true } = {}) {
@@ -390,7 +407,7 @@ async function boot() {
       `<div class="status-dot"></div> API Online · ${healthModel} · AUC ${escapeHtml(healthAuc)}`;
     healthOk = true;
   } catch (e) {
-    el('status-badge').innerHTML = `<span style="color:var(--warning)">⚠ API Offline</span>`;
+    el('status-badge').innerHTML = `<span class="status-offline">⚠ API Offline</span>`;
     el('api-banner').classList.add('show');
     console.warn('API unreachable:', e);
     return; // Nothing else to load if the API is down.
@@ -566,12 +583,12 @@ function renderEDACharts(d) {
 // MODEL CHARTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function renderModelCharts(d) {
+function renderModelCharts(d, { force = false } = {}) {
   // Guard: if chart-roc already exists, charts were already rendered this session.
   // makeChart() calls destroy() before recreating, so re-renders are safe — but
   // we avoid them on tab re-entry for performance. If you need a force-refresh
   // (e.g. after a data reload), delete charts['chart-roc'] before calling this.
-  if (charts['chart-roc']) return;
+  if (charts['chart-roc'] && !force) return;
 
   const palette = [MINT, PUR, '#EC4899', BLUE, AMBER];
 
@@ -587,7 +604,7 @@ function renderModelCharts(d) {
       <td>${modelName} ${m.is_best ? '<span class="badge-best">BEST</span>' : ''}</td>
       <td class="num">${escapeHtml(m.roc_auc)}</td>
       <td class="num">${escapeHtml(m.pr_auc)}</td>
-      <td class="num">${escapeHtml(m.cv_mean)} <span style="color:var(--text-faint)">±${escapeHtml(m.cv_std)}</span></td>
+      <td class="num">${escapeHtml(m.cv_mean)} <span class="text-faint">±${escapeHtml(m.cv_std)}</span></td>
       <td>${escapeHtml(m.brier)}</td>
       <td>${escapeHtml(m.precision)}</td>
       <td>${escapeHtml(m.recall)}</td>
@@ -693,8 +710,8 @@ function renderModelCharts(d) {
     <strong>EVALUATION</strong> — Stratified 80/20 split + 5-fold stratified CV (scored on PR-AUC)<br>
     <strong>PRIMARY METRIC</strong> — PR-AUC (appropriate for imbalanced classification; used for model selection)<br>
     <strong>OPT. THRESHOLD</strong> — ${escapeHtml(d.threshold_analysis.optimal_f1_threshold)} (F1) · ${escapeHtml(d.threshold_analysis.optimal_cost_threshold)} (cost-optimal)<br>
-    <strong style="color:var(--warning)">LIMITATIONS</strong> — Trained on synthetic data; calibration may drift on real distributions<br>
-    <strong style="color:var(--warning)">BIAS CHECK</strong> — No demographic features used — no protected-class risk`;
+    <strong class="text-warning">LIMITATIONS</strong> — Trained on synthetic data; calibration may drift on real distributions<br>
+    <strong class="text-warning">BIAS CHECK</strong> — No demographic features used — no protected-class risk`;
 
   el('clf-report-wrap').innerHTML = `
     <div class="table-scroll"><table class="data-table">
@@ -881,8 +898,8 @@ function renderResult(data, input) {
   const traceEl = el('result-decision-trace');
   if (traceEl && trace) {
     const ruleHtml = trace.rule_engine.fired
-      ? `<span style="color:var(--warning)">${escapeHtml(trace.rule_engine.rule_id)}</span>`
-      : `<span style="color:var(--text-faint)">No rule fired</span>`;
+      ? `<span class="text-warning">${escapeHtml(trace.rule_engine.rule_id)}</span>`
+      : `<span class="text-faint">No rule fired</span>`;
     traceEl.innerHTML = `
       <div class="trace-row"><span class="trace-k">ML probability</span><span class="trace-v">${escapeHtml(data.ml_probability_pct)} → ${escapeHtml(trace.ml_tier)}</span></div>
       <div class="trace-row"><span class="trace-k">Rule engine</span><span class="trace-v">${ruleHtml}</span></div>
@@ -906,7 +923,7 @@ function renderResult(data, input) {
         <div class="shap-feat" title="${feature}">${feature}</div>
         <div class="shap-bar-track">
           <div class="shap-bar-fill" style="left:${pos ? 50 : 50 - pctW}%;width:${pctW}%;background:${col}"></div>
-          <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2)"></div>
+          <div class="shap-midline"></div>
         </div>
         <div class="shap-val" style="color:${col}">${shapVal}</div>
       </div>`;
@@ -935,7 +952,7 @@ function renderHistory() {
     const tierLabel = escapeHtml(r.tier);
     return `
     <tr>
-      <td style="color:var(--text-faint)">${scoreHistory.length - i}</td>
+      <td class="text-faint">${scoreHistory.length - i}</td>
       <td>${escapeHtml(r.tx_type)}</td>
       <td class="num">$${r.amount.toLocaleString()}</td>
       <td>${escapeHtml(r.tx_location)}</td>
@@ -970,6 +987,8 @@ function recalcImpact() {
     caught: r.tp * costFn * scale,
     net:    (r.tp * costFn - r.fp * costFp) * scale,
     tp:     r.tp,
+    fp:     r.fp,
+    fn:     r.fn,
   }));
 
   const totalFraudInTest = THRESH_DATA.length ? (THRESH_DATA[0].tp + THRESH_DATA[0].fn) : 0;
@@ -985,6 +1004,17 @@ function recalcImpact() {
   setText('biz-annual-save',    '$' + (bestSave.s * 12).toFixed(1));
   setText('biz-annual-cost',    '$' + (optRow.total * 12).toFixed(1));
   setText('biz-monthly-caught', Math.round(optRow.tp / testSize * monthly).toLocaleString());
+  setText('biz-opt-threshold',  Number(optRow.t).toFixed(2));
+  const monthlyAlerts = Math.round((optRow.tp + optRow.fp) / testSize * monthly);
+  setText('biz-alerts',         monthlyAlerts.toLocaleString());
+  const precisionRate = (optRow.tp + optRow.fp) > 0 ? (optRow.tp / (optRow.tp + optRow.fp)) * 100 : 0;
+  const captureRate = (optRow.tp + optRow.fn) > 0 ? (optRow.tp / (optRow.tp + optRow.fn)) * 100 : 0;
+  const missRate = (optRow.tp + optRow.fn) > 0 ? (optRow.fn / (optRow.tp + optRow.fn)) * 100 : 0;
+  const costReduction = baselineCost > 0 ? ((baselineCost - optRow.total) / baselineCost) * 100 : 0;
+  setText('biz-precision',      precisionRate.toFixed(1) + '%');
+  setText('biz-capture-rate',   captureRate.toFixed(1) + '%');
+  setText('biz-miss-rate',      missRate.toFixed(1) + '%');
+  setText('biz-cost-reduction', costReduction.toFixed(1) + '%');
 
   makeChart('chart-cost', {
     type: 'line',

@@ -17,8 +17,8 @@
 <header>
   <div class="wrapper">
     <div class="header-grid">
-      <div>
-        <h1>Fraud<em>Shield</em><br>Detection</h1>
+      <div class="header-copy">
+        <h1>Fraud<em>Shield</em><br>Fraud Monitoring & Detection</h1>
         <p class="header-sub">
           A full-stack fraud detection system — EDA insights, ML model comparison,
           SHAP explainability, threshold optimisation, and a live transaction scorer
@@ -26,14 +26,27 @@
         </p>
       </div>
       <div class="header-tools">
-        <div class="status-badge" id="status-badge">
-          <div class="spinner" style="width:7px;height:7px;border-width:1px"></div>
-          Connecting…
-        </div>
         <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light mode">
-          <span class="theme-toggle-icon" id="theme-toggle-icon" aria-hidden="true">☀</span>
-          <span id="theme-toggle-label">Light Mode</span>
+          <span class="theme-toggle-icon" id="theme-toggle-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4.2"></circle>
+              <line x1="12" y1="1.8" x2="12" y2="4.4"></line>
+              <line x1="12" y1="19.6" x2="12" y2="22.2"></line>
+              <line x1="1.8" y1="12" x2="4.4" y2="12"></line>
+              <line x1="19.6" y1="12" x2="22.2" y2="12"></line>
+              <line x1="4.8" y1="4.8" x2="6.7" y2="6.7"></line>
+              <line x1="17.3" y1="17.3" x2="19.2" y2="19.2"></line>
+              <line x1="17.3" y1="6.7" x2="19.2" y2="4.8"></line>
+              <line x1="4.8" y1="19.2" x2="6.7" y2="17.3"></line>
+            </svg>
+          </span>
         </button>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="status-badge" id="status-badge">
+        <div class="spinner spinner-xs"></div>
+        Connecting…
       </div>
     </div>
   </div>
@@ -50,39 +63,39 @@
     <div class="kpi-strip">
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--accent)"></div>
+        <div class="kpi-accent-line accent-accent"></div>
         <div class="kpi-val" id="kpi-total">—</div>
         <div class="kpi-lbl">Transactions</div>
       </div>
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--danger)"></div>
+        <div class="kpi-accent-line accent-danger"></div>
         <div class="kpi-val" id="kpi-fraud">—</div>
         <div class="kpi-lbl">Fraud Cases</div>
       </div>
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--warning)"></div>
+        <div class="kpi-accent-line accent-warning"></div>
         <div class="kpi-val" id="kpi-rate">—</div>
         <div class="kpi-lbl">Fraud Rate</div>
         <div class="kpi-sub">Class imbalance</div>
       </div>
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--info)"></div>
+        <div class="kpi-accent-line accent-info"></div>
         <div class="kpi-val" id="kpi-vol">—</div>
         <div class="kpi-lbl">Total Volume</div>
       </div>
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--purple)"></div>
+        <div class="kpi-accent-line accent-purple"></div>
         <div class="kpi-val" id="kpi-model">—</div>
         <div class="kpi-lbl">Best Model</div>
         <div class="kpi-sub" id="kpi-auc">—</div>
       </div>
 
       <div class="kpi-item">
-        <div class="kpi-accent-line" style="background:var(--accent)"></div>
+        <div class="kpi-accent-line accent-accent"></div>
         <div class="kpi-val" id="kpi-cv">—</div>
         <div class="kpi-lbl">5-Fold CV AUC</div>
         <div class="kpi-sub">Stratified</div>
@@ -96,11 +109,11 @@
 <div class="tabs-wrapper">
   <div class="wrapper">
     <div class="tabs" role="tablist" aria-label="FraudShield dashboard sections">
-      <button class="tab-btn active" id="tab-btn-eda" role="tab" type="button" aria-selected="true" aria-controls="tab-eda" data-tab="eda" tabindex="0"><span class="tab-icon">📊</span>Exploratory</button>
-      <button class="tab-btn" id="tab-btn-model" role="tab" type="button" aria-selected="false" aria-controls="tab-model" data-tab="model" tabindex="-1"><span class="tab-icon">🤖</span>Model Performance</button>
-      <button class="tab-btn" id="tab-btn-scorer" role="tab" type="button" aria-selected="false" aria-controls="tab-scorer" data-tab="scorer" tabindex="-1"><span class="tab-icon">🎯</span>Live Scorer</button>
-      <button class="tab-btn" id="tab-btn-impact" role="tab" type="button" aria-selected="false" aria-controls="tab-impact" data-tab="impact" tabindex="-1"><span class="tab-icon">💼</span>Business Impact</button>
-      <button class="tab-btn" id="tab-btn-about" role="tab" type="button" aria-selected="false" aria-controls="tab-about" data-tab="about" tabindex="-1"><span class="tab-icon">👤</span>About</button>
+      <button class="tab-btn active" id="tab-btn-eda" role="tab" type="button" aria-selected="true" aria-controls="tab-eda" data-tab="eda" tabindex="0"><span class="tab-icon">📊</span><span class="tab-text">Exploratory</span></button>
+      <button class="tab-btn" id="tab-btn-model" role="tab" type="button" aria-selected="false" aria-controls="tab-model" data-tab="model" tabindex="-1"><span class="tab-icon">🤖</span><span class="tab-text">Model</span></button>
+      <button class="tab-btn" id="tab-btn-scorer" role="tab" type="button" aria-selected="false" aria-controls="tab-scorer" data-tab="scorer" tabindex="-1"><span class="tab-icon">🎯</span><span class="tab-text">Scorer</span></button>
+      <button class="tab-btn" id="tab-btn-impact" role="tab" type="button" aria-selected="false" aria-controls="tab-impact" data-tab="impact" tabindex="-1"><span class="tab-icon">💼</span><span class="tab-text">Impact</span></button>
+      <button class="tab-btn" id="tab-btn-about" role="tab" type="button" aria-selected="false" aria-controls="tab-about" data-tab="about" tabindex="-1"><span class="tab-icon">👤</span><span class="tab-text">About</span></button>
     </div>
   </div>
 </div>
@@ -129,7 +142,9 @@
         <div class="about-name">Sudip Shrestha</div>
         <div class="about-role">Data Analyst & AI Engineer</div>
         <p class="about-summary">
-          I am a data enthusiast with a background in software engineering and a passion for transoforming complex datasets into compelling visual stories and actionable insights. With experience in Python, SQL, and JavaScript, I specialize in building interactive dashboards and machine learning models that drive informed decision-making. I thrive at the intersection of data science and software development, leveraging my skills to create impactful solutions that bridge the gap between raw data and strategic business outcomes.
+          I am a data enthusiast with a software engineering background and a passion for transforming complex datasets into clear, actionable insights.
+          With experience in Python, SQL, and JavaScript, I build interactive dashboards and machine learning systems that support practical decision-making.
+          My focus is the intersection of data science and product thinking, where technical depth translates into measurable business outcomes.
         </p>
       </div>
 
@@ -147,7 +162,7 @@
           </a>
           <a class="about-link" href="mailto:sudipshrestha.ca@gmail.com"><span class="about-link-icon">✉️</span>Email</a>
         </div>
-        <p class="about-note">Don't hesitate to reach out!👋👋</p>
+        <p class="about-note">Don't hesitate to reach out.</p>
       </div>
     </div>
 
@@ -278,7 +293,7 @@
       <div class="insight-card">
         <div class="insight-icon">🕐</div>
         <div class="insight-title">Late-Night Spike</div>
-        <div class="insight-body">Fraud peaks after 22:00. <code style="font-size:10px;color:var(--accent)">Unusual_Time_Transaction</code> ranks top-3 across all models.</div>
+        <div class="insight-body">Fraud peaks after 22:00. <code class="insight-inline-code">Unusual_Time_Transaction</code> ranks top-3 across all models.</div>
       </div>
       <div class="insight-card">
         <div class="insight-icon">📍</div>
@@ -647,7 +662,7 @@
     </div><!-- /.biz-kpi-grid -->
 
     <!-- Charts (unchanged) -->
-    <div class="grid-2" style="margin-bottom:22px">
+    <div class="grid-2 section-block-22">
       <div class="card">
         <div class="card-title">Business Cost Curve vs Threshold</div>
         <div class="chart-frame chart-h-270"><canvas id="chart-cost"></canvas></div>
@@ -700,7 +715,19 @@
       </div><!-- /.projection-grid -->
     </div><!-- /.projection-panel -->
 
-    <p style="font-size:10px;color:var(--text-faint);font-family:var(--font-mono);margin-top:18px;line-height:1.9;border-top:1px solid var(--border);padding-top:14px;letter-spacing:0.02em">
+    <div class="impact-guidance">
+      <div class="impact-guidance-title">How To Read These Numbers</div>
+      <div class="impact-guidance-grid">
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Cost-Optimal Threshold</span><span class="impact-guidance-v" id="biz-opt-threshold">—</span></div>
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Expected Alerts / Month</span><span class="impact-guidance-v" id="biz-alerts">—</span></div>
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Precision At Optimum</span><span class="impact-guidance-v" id="biz-precision">—</span></div>
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Fraud Capture Rate</span><span class="impact-guidance-v" id="biz-capture-rate">—</span></div>
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Miss Rate At Optimum</span><span class="impact-guidance-v" id="biz-miss-rate">—</span></div>
+        <div class="impact-guidance-item"><span class="impact-guidance-k">Cost Reduction vs No-Model</span><span class="impact-guidance-v" id="biz-cost-reduction">—</span></div>
+      </div>
+    </div>
+
+    <p class="assumptions-note">
       ASSUMPTIONS — Cost figures are illustrative and denominated in the same units as the dataset.
       FP/FN costs should be calibrated to your institution's actual cost structure.
       Projections scale linearly from the test set to monthly volume.
