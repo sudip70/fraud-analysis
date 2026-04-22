@@ -5,62 +5,65 @@ const API_URL = 'https://fraudshield-cv7g.onrender.com';
 
 // ── CITY COORDINATES (for auto distance calculation) ──────────────────────────
 const CITY_COORDS = {
-  // North America — US
-  "New York":       [40.7128,  -74.0060],
-  "Los Angeles":    [34.0522, -118.2437],
+  "Amsterdam":      [52.3676,    4.9041],
+  "Atlanta":        [33.7490,  -84.3880],
+  "Austin":         [30.2672,  -97.7431],
+  "Bangkok":        [13.7563,  100.5018],
+  "Berlin":         [52.5200,   13.4050],
+  "Boston":         [42.3601,  -71.0589],
+  "Brussels":       [50.8503,    4.3517],
+  "Buenos Aires":   [-34.6037, -58.3816],
+  "Cairo":          [30.0444,   31.2357],
+  "Calgary":        [51.0447, -114.0719],
+  "Charlotte":      [35.2271,  -80.8431],
   "Chicago":        [41.8781,  -87.6298],
+  "Columbus":       [39.9612,  -82.9988],
+  "Copenhagen":     [55.6761,   12.5683],
+  "Dallas":         [32.7767,  -96.7970],
+  "Denver":         [39.7392, -104.9903],
+  "Detroit":        [42.3314,  -83.0458],
+  "Dubai":          [25.2048,   55.2708],
+  "Dublin":         [53.3498,   -6.2603],
+  "Helsinki":       [60.1695,   24.9354],
+  "Hong Kong":      [22.3193,  114.1694],
   "Houston":        [29.7604,  -95.3698],
-  "Phoenix":        [33.4484, -112.0742],
+  "Indianapolis":   [39.7684,  -86.1581],
+  "Istanbul":       [41.0082,   28.9784],
+  "Lagos":          [ 6.5244,    3.3792],
+  "Las Vegas":      [36.1699, -115.1398],
+  "Lisbon":         [38.7223,   -9.1393],
+  "London":         [51.5074,   -0.1278],
+  "Los Angeles":    [34.0522, -118.2437],
+  "Louisville":     [38.2527,  -85.7585],
+  "Madrid":         [40.4168,   -3.7038],
+  "Memphis":        [35.1495,  -90.0490],
+  "Mexico City":    [19.4326,  -99.1332],
+  "Miami":          [25.7617,  -80.1918],
+  "Montreal":       [45.5017,  -73.5673],
+  "Mumbai":         [19.0760,   72.8777],
+  "Nashville":      [36.1627,  -86.7816],
+  "New York":       [40.7128,  -74.0060],
+  "Oslo":           [59.9139,   10.7522],
+  "Paris":          [48.8566,    2.3522],
   "Philadelphia":   [39.9526,  -75.1652],
+  "Phoenix":        [33.4484, -112.0742],
+  "Portland":       [45.5051, -122.6750],
+  "Rome":           [41.9028,   12.4964],
   "San Antonio":    [29.4241,  -98.4936],
   "San Diego":      [32.7157, -117.1611],
-  "Dallas":         [32.7767,  -96.7970],
   "San Francisco":  [37.7749, -122.4194],
-  "Austin":         [30.2672,  -97.7431],
   "Seattle":        [47.6062, -122.3321],
-  "Denver":         [39.7392, -104.9903],
-  "Nashville":      [36.1627,  -86.7816],
-  "Louisville":     [38.2527,  -85.7585],
-  "Portland":       [45.5051, -122.6750],
-  "Las Vegas":      [36.1699, -115.1398],
-  "Memphis":        [35.1495,  -90.0490],
-  "Atlanta":        [33.7490,  -84.3880],
-  "Miami":          [25.7617,  -80.1918],
-  "Boston":         [42.3601,  -71.0589],
-  "Washington DC":  [38.9072,  -77.0369],
-  "Detroit":        [42.3314,  -83.0458],
-  "Indianapolis":   [39.7684,  -86.1581],
-  "Columbus":       [39.9612,  -82.9988],
-  "Charlotte":      [35.2271,  -80.8431],
-  // North America — Canada
+  "Seoul":          [37.5665,  126.9780],
+  "Singapore":      [ 1.3521,  103.8198],
+  "Stockholm":      [59.3293,   18.0686],
+  "Sydney":         [-33.8688, 151.2093],
+  "São Paulo":      [-23.5505, -46.6333],
+  "Tokyo":          [35.6762,  139.6503],
   "Toronto":        [43.6532,  -79.3832],
   "Vancouver":      [49.2827, -123.1207],
-  "Montreal":       [45.5017,  -73.5673],
-  "Calgary":        [51.0447, -114.0719],
-  // Europe
-  "London":         [51.5074,   -0.1278],
-  "Paris":          [48.8566,    2.3522],
-  "Berlin":         [52.5200,   13.4050],
-  "Madrid":         [40.4168,   -3.7038],
-  "Rome":           [41.9028,   12.4964],
-  "Amsterdam":      [52.3676,    4.9041],
-  "Dublin":         [53.3498,   -6.2603],
-  "Zurich":         [47.3769,    8.5472],
   "Vienna":         [48.2082,   16.3738],
-  "Brussels":       [50.8503,    4.3517],
-  "Copenhagen":     [55.6761,   12.5683],
-  "Stockholm":      [59.3293,   18.0686],
-  "Oslo":           [59.9139,   10.7522],
-  "Helsinki":       [60.1695,   24.9354],
-  "Lisbon":         [38.7223,   -9.1393],
-  "Istanbul":       [41.0082,   28.9784],
-  // Asia
-  "Tokyo":          [35.6762,  139.6503],
-  "Singapore":      [ 1.3521,  103.8198],
-  "Mumbai":         [19.0760,   72.8777],
-  // South America
-  "São Paulo":      [-23.5505,  -46.6333],
-  "Buenos Aires":   [-34.6037,  -58.3816],
+  "Washington DC":  [38.9072,  -77.0369],
+  "Zurich":         [47.3769,    8.5472],
 };
 
 // NOTE: CITY_COUNTRY and CITY_COORDS must stay in sync with each other and with
@@ -68,57 +71,65 @@ const CITY_COORDS = {
 // but absent from CITY_COORDS, haversine() returns null and the user sees a
 // warning in the geo-summary field rather than a stale distance value.
 const CITY_COUNTRY = {
-  "New York": "US",
-  "Los Angeles": "US",
+  "Amsterdam": "NL",
+  "Atlanta": "US",
+  "Austin": "US",
+  "Bangkok": "TH",
+  "Berlin": "DE",
+  "Boston": "US",
+  "Brussels": "BE",
+  "Buenos Aires": "AR",
+  "Cairo": "EG",
+  "Calgary": "CA",
+  "Charlotte": "US",
   "Chicago": "US",
+  "Columbus": "US",
+  "Copenhagen": "DK",
+  "Dallas": "US",
+  "Denver": "US",
+  "Detroit": "US",
+  "Dubai": "AE",
+  "Dublin": "IE",
+  "Helsinki": "FI",
+  "Hong Kong": "HK",
   "Houston": "US",
-  "Phoenix": "US",
+  "Indianapolis": "US",
+  "Istanbul": "TR",
+  "Lagos": "NG",
+  "Las Vegas": "US",
+  "Lisbon": "PT",
+  "London": "GB",
+  "Los Angeles": "US",
+  "Louisville": "US",
+  "Madrid": "ES",
+  "Memphis": "US",
+  "Mexico City": "MX",
+  "Miami": "US",
+  "Montreal": "CA",
+  "Mumbai": "IN",
+  "Nashville": "US",
+  "New York": "US",
+  "Oslo": "NO",
+  "Paris": "FR",
   "Philadelphia": "US",
+  "Phoenix": "US",
+  "Portland": "US",
+  "Rome": "IT",
   "San Antonio": "US",
   "San Diego": "US",
-  "Dallas": "US",
   "San Francisco": "US",
-  "Austin": "US",
   "Seattle": "US",
-  "Denver": "US",
-  "Nashville": "US",
-  "Louisville": "US",
-  "Portland": "US",
-  "Las Vegas": "US",
-  "Memphis": "US",
-  "Atlanta": "US",
-  "Miami": "US",
-  "Boston": "US",
-  "Washington DC": "US",
-  "Detroit": "US",
-  "Indianapolis": "US",
-  "Columbus": "US",
-  "Charlotte": "US",
+  "Seoul": "KR",
+  "Singapore": "SG",
+  "Stockholm": "SE",
+  "Sydney": "AU",
+  "São Paulo": "BR",
+  "Tokyo": "JP",
   "Toronto": "CA",
   "Vancouver": "CA",
-  "Montreal": "CA",
-  "Calgary": "CA",
-  "London": "GB",
-  "Paris": "FR",
-  "Berlin": "DE",
-  "Madrid": "ES",
-  "Rome": "IT",
-  "Amsterdam": "NL",
-  "Dublin": "IE",
-  "Zurich": "CH",
   "Vienna": "AT",
-  "Brussels": "BE",
-  "Copenhagen": "DK",
-  "Stockholm": "SE",
-  "Oslo": "NO",
-  "Helsinki": "FI",
-  "Lisbon": "PT",
-  "Istanbul": "TR",
-  "Tokyo": "JP",
-  "Singapore": "SG",
-  "Mumbai": "IN",
-  "São Paulo": "BR",
-  "Buenos Aires": "AR",
+  "Washington DC": "US",
+  "Zurich": "CH",
 };
 
 function haversine(c1, c2) {
@@ -136,6 +147,76 @@ function formatNumber(value) {
   return Number(value).toLocaleString();
 }
 
+function formatCurrency(value, decimals = 1) {
+  return '$' + Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function formatHourLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00`;
+}
+
+function formatDateLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return 'date unavailable';
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatMetricLabel(value) {
+  const map = {
+    cv_pr_auc: 'CV PR-AUC',
+    roc_auc: 'ROC-AUC',
+    pr_auc: 'PR-AUC',
+    Max24h_Utilization: 'Max 24h utilization',
+    Spend_Velocity_Today: 'Spend velocity today',
+    Daily_Transaction_Count: 'Daily transaction count',
+    Daily_vs_Expected: 'Daily vs expected activity',
+    Merchant_Category: 'Merchant category',
+    Risk_x_AmtRatio: 'Risk flag × amount ratio',
+    Amount_vs_Max24h: 'Amount vs max 24h',
+    Max_Transaction_Last_24h: 'Max transaction last 24h',
+    Risk_Flag_Count: 'Risk flag count',
+    Spend_Ratio: 'Spend ratio',
+    Tx_Velocity_Ratio: 'Transaction velocity ratio',
+    Avg_Transaction_Amount: 'Average transaction amount',
+    Hour_Cos: 'Time-of-day cyclic signal',
+    Account_Balance: 'Account balance',
+    Amount_vs_Avg: 'Amount vs average',
+    Distance_From_Home: 'Distance from home',
+    Previous_Fraud_Count: 'Previous fraud count',
+    Unusual_Time_Transaction: 'Unusual time transaction',
+  };
+  if (map[value]) return map[value];
+  return String(value)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function readNumberInput(id, fallback) {
+  const value = Number.parseFloat(el(id)?.value ?? '');
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function getViewportWidth() {
+  return Math.min(
+    window.innerWidth || Number.POSITIVE_INFINITY,
+    window.visualViewport?.width || Number.POSITIVE_INFINITY
+  );
+}
+
+function getChartViewportMode() {
+  const viewportWidth = getViewportWidth();
+  if (viewportWidth <= 420) return 'small-phone';
+  if (viewportWidth <= 480) return 'phone';
+  return 'desktop';
+}
+
 function isInternationalRoute(home, location) {
   const homeCountry = CITY_COUNTRY[home];
   const txCountry   = CITY_COUNTRY[location];
@@ -151,6 +232,8 @@ let scoreHistory = [];
 let charts       = {};
 let _cmShowOpt   = false;   // toggles confusion matrix between 0.5 and optimal threshold
 let _edaRendered = false;   // avoid rendering EDA charts while the panel is hidden
+let _chartViewportMode = 'desktop';
+let _viewportRefreshFrame = 0;
 
 // ── CHART DEFAULTS ────────────────────────────────────────────────────────────
 const THEME_KEY = 'fraudshield-theme';
@@ -176,20 +259,27 @@ function syncChartTheme() {
 
   const tooltipBg   = cssVar('--tooltip-bg', cssVar('--surface', '#141920'));
   const tooltipBody = cssVar('--tooltip-body', cssVar('--text-dim', '#7A92AE'));
+  const viewportWidth = getViewportWidth();
+  const isPhoneViewport = viewportWidth <= 480;
+  const isSmallPhoneViewport = viewportWidth <= 420;
+  const chartFontSize = isSmallPhoneViewport ? 8 : isPhoneViewport ? 9 : 10;
+  const legendBoxWidth = isPhoneViewport ? 8 : 10;
+  const legendPadding = isPhoneViewport ? 10 : 14;
+  const tooltipPadding = isPhoneViewport ? 8 : 10;
 
   Chart.defaults.color                              = tooltipBody;
   Chart.defaults.borderColor                        = GRID;
   Chart.defaults.font.family                        = "'IBM Plex Mono', monospace";
-  Chart.defaults.font.size                          = 10;
-  Chart.defaults.plugins.legend.labels.boxWidth     = 10;
-  Chart.defaults.plugins.legend.labels.padding      = 14;
+  Chart.defaults.font.size                          = chartFontSize;
+  Chart.defaults.plugins.legend.labels.boxWidth     = legendBoxWidth;
+  Chart.defaults.plugins.legend.labels.padding      = legendPadding;
   Chart.defaults.plugins.legend.labels.color        = TEXT;
   Chart.defaults.plugins.tooltip.backgroundColor    = tooltipBg;
   Chart.defaults.plugins.tooltip.borderColor        = GRID;
   Chart.defaults.plugins.tooltip.borderWidth        = 1;
   Chart.defaults.plugins.tooltip.titleColor         = TEXT;
   Chart.defaults.plugins.tooltip.bodyColor          = tooltipBody;
-  Chart.defaults.plugins.tooltip.padding            = 10;
+  Chart.defaults.plugins.tooltip.padding            = tooltipPadding;
   Chart.defaults.animation.duration                 = 600;
 }
 
@@ -271,6 +361,12 @@ function makeChart(id, config) {
   return charts[id];
 }
 
+function resetAllCharts() {
+  Object.values(charts).forEach(chart => chart.destroy());
+  charts = {};
+  _edaRendered = false;
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function lerpColor(a, b, t) {
   const ah = a.replace('#', ''), bh = b.replace('#', '');
@@ -301,7 +397,11 @@ function animCount(element, target, suffix = '', dec = 0) {
   const dur = 900, t0 = performance.now();
   const step = t => {
     const p = Math.min((t - t0) / dur, 1);
-    element.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dec) + suffix;
+    const value = target * (1 - Math.pow(1 - p, 3));
+    element.textContent = value.toLocaleString(undefined, {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec,
+    }) + suffix;
     if (p < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -418,6 +518,14 @@ async function boot() {
   // out-of-memory error on the model endpoint (common on Render free tier)
   // would also wipe out the EDA tab.
   if (healthOk) {
+    try {
+      const version = await apiFetch('/api/version');
+      populateProjectMeta(version);
+    } catch (e) {
+      console.warn('Failed to load version metadata:', e);
+      setProjectMetaUnavailable('Model artifact metadata is temporarily unavailable.');
+    }
+
     let edaOk = false;
 
     try {
@@ -431,13 +539,16 @@ async function boot() {
     try {
       MODEL_DATA = await apiFetch('/api/model');
       THRESH_DATA = MODEL_DATA.threshold_analysis.data;
+      clearModelUnavailableState();
     } catch (e) {
       console.warn('Failed to load model data:', e);
-      // Leave MODEL_DATA null; tab renders will show their loading placeholders.
+      setModelUnavailableState('Model evaluation data could not be loaded from the API.');
     }
 
     if (EDA_DATA && MODEL_DATA) {
       populateKPIs(EDA_DATA, MODEL_DATA);
+      populateInsights(EDA_DATA, MODEL_DATA);
+      syncImpactDefaults(EDA_DATA);
     } else if (EDA_DATA) {
       // Partial population — fill what we can from EDA alone.
       const o = EDA_DATA.overview;
@@ -446,6 +557,8 @@ async function boot() {
       setText('kpi-rate', pct(o.fraud_rate));
       setText('kpi-vol', (o.total_amount / 1_000_000).toFixed(1) + 'M');
       setText('eda-total-tx', formatNumber(o.total_transactions));
+      populateInsights(EDA_DATA, null);
+      syncImpactDefaults(EDA_DATA);
     }
 
     const edaPanel = el('tab-eda');
@@ -454,6 +567,102 @@ async function boot() {
       renderEDACharts(EDA_DATA);
       _edaRendered = true;
     }
+  }
+}
+
+function populateProjectMeta(version) {
+  const metaEl = el('hero-meta');
+  if (!metaEl || !version) return;
+
+  const trained = formatDateLabel(version.trained_at);
+  const rows = Number.isFinite(version.n_training_rows)
+    ? `${formatNumber(version.n_training_rows)} rows`
+    : 'dataset size unavailable';
+  const features = Number.isFinite(version.n_features)
+    ? `${formatNumber(version.n_features)} engineered features`
+    : 'feature count unavailable';
+  const metric = version.model_selection_metric
+    ? formatMetricLabel(version.model_selection_metric)
+    : 'selection metric unavailable';
+
+  metaEl.textContent = `Trained ${trained} · ${rows} · ${features} · selected on ${metric}.`;
+}
+
+function setProjectMetaUnavailable(message) {
+  const metaEl = el('hero-meta');
+  if (!metaEl) return;
+  metaEl.textContent = message;
+}
+
+function degradedStateMarkup(title, message) {
+  return `
+    <div class="data-state" role="status">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(message)}</span>
+    </div>`;
+}
+
+function setModelUnavailableState(message) {
+  MODEL_DATA = null;
+  THRESH_DATA = null;
+
+  setText('kpi-model', 'Unavailable');
+  setText('kpi-auc', 'Model endpoint unavailable');
+  setText('kpi-cv', '—');
+  setText('tm-prec', '—');
+  setText('tm-rec', '—');
+  setText('tm-f1', '—');
+  setText('tm-fp', '—');
+  setText('tm-fn', '—');
+  setText('slider-val-display', '—');
+
+  const thresholdSlider = el('threshold-slider');
+  if (thresholdSlider) thresholdSlider.disabled = true;
+
+  const cmToggle = el('cm-toggle-btn');
+  if (cmToggle) cmToggle.disabled = true;
+
+  const cmLabel = el('cm-thresh-label');
+  if (cmLabel) cmLabel.textContent = '@ unavailable';
+
+  const sharedMessage = message || 'Model data is temporarily unavailable.';
+  const sections = [
+    ['model-table-wrap', 'Model comparison unavailable'],
+    ['cm-wrap', 'Confusion matrix unavailable'],
+    ['model-card-content', 'Model card unavailable'],
+    ['clf-report-wrap', 'Classification report unavailable'],
+  ];
+
+  sections.forEach(([id, title]) => {
+    const container = el(id);
+    if (container) container.innerHTML = degradedStateMarkup(title, sharedMessage);
+  });
+}
+
+function clearModelUnavailableState() {
+  const thresholdSlider = el('threshold-slider');
+  if (thresholdSlider) {
+    thresholdSlider.disabled = false;
+    setText('slider-val-display', Number.parseFloat(thresholdSlider.value).toFixed(2));
+  }
+
+  const cmToggle = el('cm-toggle-btn');
+  if (cmToggle) {
+    cmToggle.disabled = false;
+    cmToggle.textContent = 'Show Optimal Threshold';
+  }
+
+  const cmLabel = el('cm-thresh-label');
+  if (cmLabel) cmLabel.textContent = '@ 0.5';
+
+  _cmShowOpt = false;
+}
+
+function syncImpactDefaults(eda) {
+  const avgFraudAmount = Number(eda?.overview?.avg_fraud_amount);
+  const costFnInput = el('cost-fn');
+  if (costFnInput && Number.isFinite(avgFraudAmount) && costFnInput.dataset.touched !== 'true') {
+    costFnInput.value = avgFraudAmount.toFixed(1);
   }
 }
 
@@ -467,9 +676,64 @@ function populateKPIs(eda, model) {
   setText('eda-total-tx', formatNumber(o.total_transactions));
 
   const best = model.comparison.find(m => m.is_best);
-  setText('kpi-model', best.name.split(' ')[0]);
-  setText('kpi-auc',   'ROC-AUC ' + best.roc_auc);
-  setText('kpi-cv',    best.cv_mean + ' ± ' + best.cv_std);
+  setText('kpi-model', best.name);
+  setText('kpi-auc',   'ROC-AUC ' + Number(best.roc_auc).toFixed(4));
+  setText('kpi-cv',    `${Number(best.cv_mean).toFixed(4)} ± ${Number(best.cv_std).toFixed(4)}`);
+}
+
+function populateInsights(eda, model) {
+  if (!eda) return;
+
+  const topCombo = [...(eda.fraud_by_combo || [])].sort((a, b) => b.fraud_rate - a.fraud_rate)[0];
+  if (topCombo) {
+    setText('insight-combo-title', 'Top Paired Signal');
+    setText(
+      'insight-combo-body',
+      `${topCombo.Combo} has the highest observed fraud rate at ${pct(topCombo.fraud_rate)} in this synthetic dataset.`
+    );
+  }
+
+  const hours = [...(eda.fraud_by_hour || [])].filter(row => Number.isFinite(row.Hour));
+  if (hours.length) {
+    const peakHour = [...hours].sort((a, b) => b.fraud_rate - a.fraud_rate)[0];
+    const night = hours.filter(row => row.Hour >= 22 || row.Hour <= 5);
+    const daytime = hours.filter(row => row.Hour >= 6 && row.Hour <= 21);
+    const avg = arr => arr.length ? arr.reduce((sum, row) => sum + row.fraud_rate, 0) / arr.length : 0;
+    const nightAvg = avg(night);
+    const dayAvg = avg(daytime);
+    const premium = dayAvg > 0 ? ((nightAvg / dayAvg) - 1) * 100 : 0;
+    setText('insight-hour-title', 'Peak Risk Window');
+    setText(
+      'insight-hour-body',
+      `Fraud peaks at ${formatHourLabel(peakHour.Hour)} with a ${pct(peakHour.fraud_rate)} rate; overnight hours run about ${premium.toFixed(0)}% higher than daytime on average.`
+    );
+  }
+
+  const normalMedian = Number(eda?.distance_dist?.normal_median);
+  const fraudMedian = Number(eda?.distance_dist?.fraud_median);
+  if (Number.isFinite(normalMedian) && Number.isFinite(fraudMedian)) {
+    const ratio = normalMedian > 0 ? fraudMedian / normalMedian : null;
+    setText('insight-distance-title', 'Distance Gap');
+    setText(
+      'insight-distance-body',
+      ratio
+        ? `Fraud median distance is ${ratio.toFixed(1)}× normal behavior (${formatNumber(fraudMedian)} km vs ${formatNumber(normalMedian)} km), making travel mismatch a strong risk signal.`
+        : `Fraud median distance is ${formatNumber(fraudMedian)} km versus ${formatNumber(normalMedian)} km for normal transactions, highlighting strong location drift.`
+    );
+  }
+
+  const topFeature = model?.shap_global?.[0]?.feature || model?.feature_importance?.[0]?.feature;
+  if (topFeature) {
+    const source = model?.shap_global?.length ? 'global SHAP' : 'feature importance';
+    setText('insight-model-title', 'Top Global Driver');
+    setText(
+      'insight-model-body',
+      `${formatMetricLabel(topFeature)} is currently the strongest signal in the deployed artifact by ${source}, so this card now reflects the live model instead of a hard-coded claim.`
+    );
+  } else {
+    setText('insight-model-title', 'Model Insight Pending');
+    setText('insight-model-body', 'Explainability data was not available from the API, so model-specific commentary is intentionally withheld.');
+  }
 }
 
 // ── CHART HELPER ──────────────────────────────────────────────────────────────
@@ -501,7 +765,7 @@ function renderEDACharts(d) {
   const mer = sort(d.fraud_by_merchant);
   makeChart('chart-merchant', hBarConfig(mer.map(r => r.Merchant_Category), mer.map(r => r.fraud_rate), PUR, '#EC4899'));
 
-  const cty = sort(d.fraud_by_location);
+  const cty = sort(d.fraud_by_location).slice(-15);
   makeChart('chart-city', hBarConfig(cty.map(r => r.Transaction_Location), cty.map(r => r.fraud_rate), BLUE, MINT));
 
   // Hourly line
@@ -589,6 +853,8 @@ function renderModelCharts(d, { force = false } = {}) {
   // we avoid them on tab re-entry for performance. If you need a force-refresh
   // (e.g. after a data reload), delete charts['chart-roc'] before calling this.
   if (charts['chart-roc'] && !force) return;
+
+  clearModelUnavailableState();
 
   const palette = [MINT, PUR, '#EC4899', BLUE, AMBER];
 
@@ -823,11 +1089,53 @@ function lockScoreButtonWidth() {
   }
 }
 
+function setScoreFeedback(message = '', type = 'error') {
+  const feedback = el('score-feedback');
+  if (!feedback) return;
+
+  if (!message) {
+    feedback.textContent = '';
+    feedback.className = 'score-feedback';
+    return;
+  }
+
+  feedback.textContent = message;
+  feedback.className = `score-feedback show ${type}`;
+}
+
+function validateScorerInputs() {
+  const fields = [...document.querySelectorAll('#tab-scorer input, #tab-scorer select')]
+    .filter(field => !field.disabled && !field.readOnly);
+  const invalid = fields.find(field => typeof field.checkValidity === 'function' && !field.checkValidity());
+  if (!invalid) return true;
+
+  invalid.reportValidity?.();
+  invalid.focus?.();
+  setScoreFeedback('Check the highlighted field and try again.', 'error');
+  return false;
+}
+
+function extractApiError(payload) {
+  if (!payload) return '';
+  if (typeof payload.detail === 'string') return payload.detail;
+  if (Array.isArray(payload.detail)) {
+    return payload.detail
+      .map(item => item?.msg || item?.message)
+      .filter(Boolean)
+      .join(' ');
+  }
+  return payload.message || '';
+}
+
 async function scoreTransaction() {
+  setScoreFeedback('');
+  if (!validateScorerInputs()) return;
+
   const btn = el('score-btn');
   lockScoreButtonWidth();
   btn.disabled   = true;
   btn.textContent = '⏳ Scoring…';
+  setScoreFeedback('Submitting transaction to the live API…', 'info');
 
   const payload = {
     amount:       +el('f-amount').value,
@@ -856,23 +1164,32 @@ async function scoreTransaction() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    renderResult(data, payload);
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(extractApiError(data) || `Request failed (${res.status})`);
+    }
+    renderResult(data);
     // FIX: Store riskScore (0–100 composite index) as a number so history
     // entries can be sorted or compared numerically later. Previously named
     // `prob` which was misleading — this is not a raw ML probability.
     scoreHistory.unshift({ ...payload, riskScore: data.risk_score, tier: data.tier });
     renderHistory();
+    setScoreFeedback('');
   } catch (e) {
-    alert('Could not reach API. Make sure the backend is running.\n\n' + e.message);
+    const offline = e instanceof TypeError || /Failed to fetch|NetworkError/i.test(e.message);
+    setScoreFeedback(
+      offline
+        ? 'Could not reach the live API. Check the backend health or try again in a few seconds.'
+        : e.message,
+      'error'
+    );
   } finally {
     btn.disabled   = false;
     btn.textContent = '⚡ Analyse Transaction';
   }
 }
 
-function renderResult(data, input) {
+function renderResult(data) {
   const tier  = data.tier.toLowerCase();
   const panel = el('result-panel');
   panel.className = 'result-panel ' + tier;
@@ -891,7 +1208,7 @@ function renderResult(data, input) {
   el('gauge-fill').style.background = gaugeColors[tier];
 
   setText('result-meta-line',
-    `Risk score ${data.risk_score_pct}  ·  ML prob ${data.ml_probability_pct}  ·  threshold ${data.optimal_threshold}`);
+    `Composite score ${data.risk_score_pct}  ·  ML fraud probability ${data.ml_probability_pct}  ·  F1 threshold ${data.optimal_threshold}`);
 
   // Decision trace — compact audit display
   const trace = data.decision_trace;
@@ -972,9 +1289,9 @@ function clearHistory() {
 // ══════════════════════════════════════════════════════════════════════════════
 function recalcImpact() {
   if (!THRESH_DATA || !MODEL_DATA) return;
-  const costFn  = +el('cost-fn').value    || 5.0;
-  const costFp  = +el('cost-fp').value    || 0.00005;
-  const monthly = +el('monthly-vol').value || 50000;
+  const costFn  = readNumberInput('cost-fn', 5.0);
+  const costFp  = readNumberInput('cost-fp', 15.0);
+  const monthly = readNumberInput('monthly-vol', 50000);
 
   const testSize = MODEL_DATA.test_set_size || 10000;
   const scale    = monthly / testSize;
@@ -997,12 +1314,12 @@ function recalcImpact() {
   const savingsRows  = rows.map(r => ({ t: r.t, s: baselineCost - r.total }));
   const bestSave     = savingsRows.reduce((a, b) => a.s > b.s ? a : b);
 
-  setText('biz-caught',         '$' + optRow.caught.toFixed(1));
-  setText('biz-missed',         '$' + optRow.fn_c.toFixed(1));
-  setText('biz-fp-cost',        '$' + optRow.fp_c.toFixed(4));
-  setText('biz-net',            '$' + optRow.net.toFixed(1));
-  setText('biz-annual-save',    '$' + (bestSave.s * 12).toFixed(1));
-  setText('biz-annual-cost',    '$' + (optRow.total * 12).toFixed(1));
+  setText('biz-caught',         formatCurrency(optRow.caught, 1));
+  setText('biz-missed',         formatCurrency(optRow.fn_c, 1));
+  setText('biz-fp-cost',        formatCurrency(optRow.fp_c, 1));
+  setText('biz-net',            formatCurrency(optRow.net, 1));
+  setText('biz-annual-save',    formatCurrency(bestSave.s * 12, 1));
+  setText('biz-annual-cost',    formatCurrency(optRow.total * 12, 1));
   setText('biz-monthly-caught', Math.round(optRow.tp / testSize * monthly).toLocaleString());
   setText('biz-opt-threshold',  Number(optRow.t).toFixed(2));
   const monthlyAlerts = Math.round((optRow.tp + optRow.fp) / testSize * monthly);
@@ -1068,6 +1385,7 @@ function recalcImpact() {
 // ══════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  _chartViewportMode = getChartViewportMode();
 
   const urlEl = el('api-url-display');
   if (urlEl) urlEl.textContent = API_URL;
@@ -1077,6 +1395,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (homeEl) homeEl.addEventListener('change', updateDistance);
   if (locEl)  locEl.addEventListener('change',  updateDistance);
   updateDistance();
+
+  ['cost-fn', 'cost-fp'].forEach(id => {
+    const input = el(id);
+    if (input) {
+      input.addEventListener('input', () => {
+        input.dataset.touched = 'true';
+      });
+    }
+  });
 
   document.querySelectorAll('.tab-btn').forEach(tabBtn => {
     tabBtn.addEventListener('click', () => activateTab(tabBtn.dataset.tab, { focus: false }));
@@ -1094,10 +1421,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keep analyse button width stable across text/disabled state changes.
   requestAnimationFrame(lockScoreButtonWidth);
-  window.addEventListener('resize', () => {
-    const scoreBtn = el('score-btn');
-    if (scoreBtn && !scoreBtn.disabled) lockScoreButtonWidth();
-  });
+
+  const handleViewportRefresh = () => {
+    if (_viewportRefreshFrame) return;
+    _viewportRefreshFrame = requestAnimationFrame(() => {
+      _viewportRefreshFrame = 0;
+
+      const scoreBtn = el('score-btn');
+      if (scoreBtn && !scoreBtn.disabled) lockScoreButtonWidth();
+
+      const nextMode = getChartViewportMode();
+      if (nextMode === _chartViewportMode) return;
+
+      _chartViewportMode = nextMode;
+      syncChartTheme();
+      resetAllCharts();
+      rerenderThemeSensitiveViews();
+    });
+  };
+
+  window.addEventListener('resize', handleViewportRefresh);
+  window.visualViewport?.addEventListener('resize', handleViewportRefresh);
 
   boot();
 });

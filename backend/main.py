@@ -1,5 +1,5 @@
 """
-FraudShield — FastAPI Backend  v4.2
+FraudShield — FastAPI Backend  v4.2.0
 =====================================
 Endpoints:
   GET  /api/health
@@ -63,6 +63,8 @@ log.info("CORS_ORIGINS  = %s", CORS_ORIGINS)
 log.info("ARTIFACT_PATH = %s", ARTIFACT_PATH)
 log.info("LOG_LEVEL     = %s", LOG_LEVEL)
 
+API_VERSION = "4.2.0"
+
 # FIX: Warn loudly when CORS is open to all origins so accidental production
 # deploys are immediately visible in logs, even on Render's free tier.
 if "*" in CORS_ORIGINS:
@@ -105,7 +107,7 @@ arts = load_artifacts()
 app = FastAPI(
     title="FraudShield API",
     description="Fraud detection ML backend — EDA stats, model metrics, live scoring",
-    version="4.1.0",
+    version=API_VERSION,
 )
 
 app.add_middleware(
@@ -144,7 +146,7 @@ VALID_TX_TYPES = {"Online", "ATM", "POS", "Wire Transfer"}
 VALID_MERCHANT_CATS = {
     "Airlines", "ATM", "Clothing", "Electronics", "Entertainment", "Fuel",
     "Grocery", "Healthcare", "Hotel", "Jewelry", "Online Shopping",
-    "Pharmacy", "Restaurant", "Travel",
+    "Pharmacy", "Restaurant", "Travel", "Utilities", "Wire Transfer",
 }
 VALID_CARD_TYPES = {"Debit", "Credit", "Prepaid"}
 CITY_COUNTRY = {
@@ -160,7 +162,9 @@ CITY_COUNTRY = {
     "Dublin": "IE", "Zurich": "CH", "Vienna": "AT", "Brussels": "BE",
     "Copenhagen": "DK", "Stockholm": "SE", "Oslo": "NO", "Helsinki": "FI",
     "Lisbon": "PT", "Istanbul": "TR", "Tokyo": "JP", "Singapore": "SG",
-    "Mumbai": "IN", "São Paulo": "BR", "Buenos Aires": "AR",
+    "Mumbai": "IN", "Seoul": "KR", "Hong Kong": "HK", "Bangkok": "TH",
+    "Dubai": "AE", "Cairo": "EG", "Lagos": "NG", "Sydney": "AU",
+    "Mexico City": "MX", "São Paulo": "BR", "Buenos Aires": "AR",
 }
 VALID_CITIES = set(CITY_COUNTRY.keys())
 
@@ -228,7 +232,7 @@ def version():
     """
     meta = arts.get("training_metadata", {})
     return {
-        "api_version":          "4.1.0",
+        "api_version":          API_VERSION,
         "pipeline_version":     meta.get("pipeline_version", "unknown"),
         "trained_at":           meta.get("trained_at"),
         "sklearn_version":      meta.get("sklearn_version"),
